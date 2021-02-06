@@ -1,6 +1,6 @@
 ## Introduction
 BboxToolkit is a tiny library including common operations for HBB(horizontal bboxes), OBB(Oriented bboxes) and POLY(poly bboxes).
-The whole BboxToolkit is writed by python and not requires compiling.
+The whole BboxToolkit is written by python and not requires compiling.
 So it's easy to install BboxToolkit and use it in other projects. 
 We have already implemented some tools using BboxToolkit for ease of use.
 
@@ -12,7 +12,7 @@ BboxToolkit will automatically install dependencies when you install, so this se
 
 BboxToolkit requires following dependencies:
 
-+ Python>3
++ Python > 3
 + Numpy
 + Opencv-python
 + Shapely
@@ -20,7 +20,7 @@ BboxToolkit requires following dependencies:
 + Pillow
 
 ## Installation
-BboxToolkit is writed by python, no compilation is required.
+BboxToolkit is written by python, no compilation is required.
 
 ```
 git clone https://github.com/jbwang1997/BboxToolkit
