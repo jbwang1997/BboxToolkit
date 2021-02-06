@@ -4,6 +4,9 @@ The whole BboxToolkit is writed by python and not requires compiling.
 So it's easy to install BboxToolkit and use it in other projects. 
 We have already implemented some tools using BboxToolkit for ease of use.
 
+## License
+This project is released under the [Apache 2.0 license](LICENSE)
+
 ## Dependencies
 BboxToolkit will automatically install dependencies when you install, so this section is mostly for your reference.
 
