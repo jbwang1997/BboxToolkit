@@ -1,5 +1,5 @@
 ## Introduction
-BboxToolkit is a tiny library including common operations for HBB(horizontal bboxes), OBB(Oriented bboxes) and POLY(poly bboxes).
+BboxToolkit is a tiny library including common operations for HBB(horizontal bboxes), OBB(Oriented bboxes), and POLY(poly bboxes).
 The whole BboxToolkit is written by python and not requires compiling.
 So it's easy to install BboxToolkit and use it in other projects. 
 We have already implemented some tools using BboxToolkit for ease of use.
@@ -31,7 +31,7 @@ python setup.py develop
 
 ## Usage
 ### Definition
-There are three type of bboxes defining in BboxToolkit.
+There are three types of bboxes defining in BboxToolkit.
 
 ![bboxes define](definition.png)
 
@@ -45,10 +45,10 @@ POLY is denoted by four points.
 The order of these points doesn't matter, but the adjacent points should be a side of POLY.
 
 ### Function API
-We will complish API documents in late update.
+We will develop API documents in a late update.
 
 ## Ackonwledgement
-BboxToolkit refers to [DOTA_devkit](https://github.com/CAPTAIN-WHU/DOTA_devkit), [MMCV](https://github.com/open-mmlab/mmcv) and [MMDetection](https://github.com/open-mmlab/mmdetection).
+BboxToolkit refers to [DOTA_devkit](https://github.com/CAPTAIN-WHU/DOTA_devkit), [MMCV](https://github.com/open-mmlab/mmcv), and [MMDetection](https://github.com/open-mmlab/mmdetection).
 
 [DOTA_devkit](https://github.com/CAPTAIN-WHU/DOTA_devkit) is the toolbox for [DOTA](https://arxiv.org/abs/1711.10398) Dataset
 
