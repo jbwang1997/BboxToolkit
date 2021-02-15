@@ -15,7 +15,8 @@ def bbox_overlaps(bboxes1, bboxes2, mode='iou', is_aligned=False, eps=1e-6):
         assert rows == cols
 
     if rows * cols == 0:
-        return np.zeros((rows, 1)) if is_aligned else np.zeros((rows, cols))
+        return np.zeros((rows, 1), dtype=np.float32) \
+                if is_aligned else np.zeros((rows, cols), dtype=np.float32)
 
     hbboxes1 = bbox2type(bboxes1, 'hbb')
     hbboxes2 = bbox2type(bboxes2, 'hbb')
@@ -50,11 +51,11 @@ def bbox_overlaps(bboxes1, bboxes2, mode='iou', is_aligned=False, eps=1e-6):
             overlaps[p] = sg_polys1[p[0]].intersection(sg_polys2[p[-1]]).area
 
         if mode == 'iou':
-            unions = np.zeros(h_overlaps.shape)
+            unions = np.zeros(h_overlaps.shape, dtype=np.float32)
             for p in zip(*np.nonzero(h_overlaps)):
                 unions[p] = sg_polys1[p[0]].union(sg_polys2[p[-1]]).area
         else:
-            unions = np.array([p.area for p in sg_polys1])
+            unions = np.array([p.area for p in sg_polys1], dtype=np.float32)
             if not is_aligned:
                 unions = unions[..., None]
 
@@ -70,20 +71,20 @@ def bbox_areas(bboxes):
     assert bbox_type != 'notype'
 
     if bbox_type == 'hbb':
-        return (bboxes[..., 2] - bboxes[..., 0]) * (
+        areas = (bboxes[..., 2] - bboxes[..., 0]) * (
             bboxes[..., 3] - bboxes[..., 1])
 
     if bbox_type == 'obb':
-        return bboxes[..., 2] * bboxes[..., 3]
+        areas = bboxes[..., 2] * bboxes[..., 3]
 
     if bbox_type == 'poly':
-        areas = np.zeros(bboxes.shape[:-1])
+        areas = np.zeros(bboxes.shape[:-1], dtype=np.float32)
         bboxes = bboxes.reshape(*bboxes.shape[:-1], 4, 2)
-        # pdb.set_trace()
         for i in range(4):
             areas += 0.5 * (bboxes[..., i, 0] * bboxes[..., (i+1)%4, 1] -
                             bboxes[..., (i+1)%4, 0] * bboxes[..., i, 1])
-        return np.abs(areas)
+        areas = np.abs(areas)
+    return areas
 
 
 def bbox_nms(bboxes, scores, iou_thr=0.5, score_thr=0.01):
@@ -103,7 +104,7 @@ def bbox_nms(bboxes, scores, iou_thr=0.5, score_thr=0.01):
         idx = np.where(ious <= iou_thr)[1]
         order = order[idx + 1]
 
-    return np.array(keep, dtype=np.int)
+    return np.array(keep, dtype=np.int64)
 
 
 def bbox_area_nms(bboxes, iou_thr=0.5):
@@ -123,4 +124,4 @@ def bbox_area_nms(bboxes, iou_thr=0.5):
         idx = np.where(ious <= iou_thr)[1]
         order = order[idx + 1]
 
-    return np.array(keep, dtype=np.int)
+    return np.array(keep, dtype=np.int64)

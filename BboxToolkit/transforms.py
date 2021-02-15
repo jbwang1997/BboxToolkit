@@ -24,9 +24,9 @@ def poly2obb(polys):
         obboxes.append([x, y, w, h, theta])
 
     if not obboxes:
-        obboxes = np.zeros((0, 5))
+        obboxes = np.zeros((0, 5), dtype=np.float32)
     else:
-        obboxes = np.array(obboxes)
+        obboxes = np.array(obboxes, dtype=np.float32)
     return obboxes.reshape(*order, 5)
 
 
@@ -100,9 +100,10 @@ def hbb2obb(hbboxes):
     w = hbboxes[..., 2] - hbboxes[..., 0]
     h = hbboxes[..., 3] - hbboxes[..., 1]
 
-    obboxes1 = np.stack([x, y, w, h, np.zeros(order)], axis=-1)
-    obboxes2 = np.stack([x, y, h, w, np.zeros(order)-pi/2], axis=-1)
-    obboxes = np.where((w >= h)[..., np.newaxis], obboxes1, obboxes2)
+    theta = np.zeros(order, dtype=np.float32)
+    obboxes1 = np.stack([x, y, w, h, theta], axis=-1)
+    obboxes2 = np.stack([x, y, h, w, theta-pi/2], axis=-1)
+    obboxes = np.where((w >= h)[..., None], obboxes1, obboxes2)
     return obboxes
 
 

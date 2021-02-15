@@ -32,8 +32,8 @@ def load_imgs(img_dir, ann_dir=None, classes=None, nproc=10,
         if info is None:
             continue
         bbox_dim = get_bbox_dim(def_bbox_type)
-        bboxes = np.zeros((0, bbox_dim), dtype=np.float)
-        labels = np.zeros((0, ), dtype=np.int)
+        bboxes = np.zeros((0, bbox_dim), dtype=np.float32)
+        labels = np.zeros((0, ), dtype=np.int64)
         info['ann'] = dict(bboxes=bboxes, labels=labels)
         contents.append(info)
     classes = [] if classes is None else classes

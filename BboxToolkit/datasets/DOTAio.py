@@ -24,9 +24,9 @@ def load_dota(img_dir, ann_dir=None, classes=None, nproc=10):
     print('Starting loading DOTA dataset information.')
     start_time = time.time()
     _load_func = partial(_load_dota_single,
-                        img_dir=img_dir,
-                        ann_dir=ann_dir,
-                        cls2lbl=cls2lbl)
+                         img_dir=img_dir,
+                         ann_dir=ann_dir,
+                         cls2lbl=cls2lbl)
     if nproc > 1:
         pool = Pool(nproc)
         contents = pool.map(_load_func, os.listdir(img_dir))
@@ -80,12 +80,12 @@ def _load_dota_txt(txtfile, cls2lbl):
                     labels.append(cls2lbl[items[8]])
                     diffs.append(int(items[9]) if len(items) == 10 else 0)
 
-    bboxes = np.array(bboxes, dtype=np.float) if bboxes else \
-            np.zeros((0, 8), dtype=np.float)
-    labels = np.array(labels, dtype=np.int) if labels else \
-            np.zeros((0, ), dtype=np.int)
-    diffs = np.array(diffs, dtype=np.int) if diffs else \
-            np.zeros((0, ), dtype=np.int)
+    bboxes = np.array(bboxes, dtype=np.float32) if bboxes else \
+            np.zeros((0, 8), dtype=np.float32)
+    labels = np.array(labels, dtype=np.int64) if labels else \
+            np.zeros((0, ), dtype=np.int64)
+    diffs = np.array(diffs, dtype=np.int64) if diffs else \
+            np.zeros((0, ), dtype=np.int64)
     ann = dict(bboxes=bboxes, labels=labels, diffs=diffs)
     return dict(gsd=gsd, ann=ann)
 
@@ -123,11 +123,9 @@ def load_dota_submission(ann_dir, img_dir=None, classes=None, nproc=10):
         bboxes, scores, labels = [], [], []
         for i, infos_dict in enumerate(infos_per_cls):
             infos = infos_dict.get(content['id'], dict())
-            num_bboxes = infos.get('bboxes', np.zeros((0, 8))).shape[0]
-
-            bboxes.append(infos.get('bboxes', np.zeros((0, 8), dtype=np.float)))
-            scores.append(infos.get('scores', np.zeros((0, ), dtype=np.float)))
-            labels.append(np.zeros((num_bboxes, ), dtype=np.int) + i)
+            bboxes.append(infos.get('bboxes', np.zeros((0, 8), dtype=np.float32)))
+            scores.append(infos.get('scores', np.zeros((0, ), dtype=np.float32)))
+            labels.append(np.zeros((bboxes[-1].shape[0], ), dtype=np.int64) + i)
 
         bboxes = np.concatenate(bboxes, axis=0)
         labels = np.concatenate(labels, axis=0)
@@ -154,7 +152,7 @@ def _load_dota_submission_txt(subfile):
 
     anns_dict = dict()
     for img_id, info_list in collector.items():
-        infos = np.array(info_list, dtype=np.float)
+        infos = np.array(info_list, dtype=np.float32)
         bboxes, scores = infos[:, :-1], infos[:, -1]
         bboxes = bbox2type(bboxes, 'poly')
         anns_dict[img_id] = dict(bboxes=bboxes, scores=scores)

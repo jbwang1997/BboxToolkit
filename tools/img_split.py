@@ -108,7 +108,8 @@ def get_sliding_window(info, sizes, gaps, img_rate_thr):
         if len(y_start) > 1 and y_start[-1]+size > height:
             y_start[-1] = height - size
 
-        start = np.array(list(itertools.product(x_start, y_start)))
+        start = np.array(list(itertools.product(x_start, y_start)),
+                         dtype=np.int64)
         stop = start + size
         windows.append(np.concatenate([start, stop], axis=1))
     windows = np.concatenate(windows, axis=0)

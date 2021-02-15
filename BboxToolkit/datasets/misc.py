@@ -83,7 +83,7 @@ def change_cls_order(contents, old_classes, new_classes):
     new_cls2lbl = {cls: i for i, cls in enumerate(new_classes)}
     lbl_mapper = [new_cls2lbl[cls] if cls in new_cls2lbl else -1
                   for cls in old_classes]
-    lbl_mapper = np.array(lbl_mapper)
+    lbl_mapper = np.array(lbl_mapper, dtype=np.int64)
 
     for content in contents:
         new_labels = lbl_mapper[content['ann']['labels']]

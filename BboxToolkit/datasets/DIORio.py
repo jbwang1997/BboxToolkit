@@ -94,10 +94,10 @@ def _load_dior_hbb_xml(xmlfile, cls2lbl):
                 float(bnd_box.find('ymax').text)
             ])
 
-    bboxes = np.array(bboxes, dtype=np.float) if bboxes \
-            else np.zeros((0, 4), dtype=np.float)
-    labels = np.array(labels, dtype=np.int) if labels \
-            else np.zeros((0, ), dtype=np.int)
+    bboxes = np.array(bboxes, dtype=np.float32) if bboxes \
+            else np.zeros((0, 4), dtype=np.float32)
+    labels = np.array(labels, dtype=np.int64) if labels \
+            else np.zeros((0, ), dtype=np.int64)
     anns = dict(bboxes=bboxes, labels=labels)
     content['ann'] = anns
     return content
@@ -136,10 +136,10 @@ def _load_dior_obb_xml(xmlfile, cls2lbl):
                 float(bnd_box.find('y_left_bottom').text),
             ])
 
-    bboxes = np.array(bboxes, dtype=np.float) if bboxes \
-            else np.zeros((0, 8), dtype=np.float)
-    labels = np.array(labels, dtype=np.int) if labels \
-            else np.zeros((0, ), dtype=np.int)
+    bboxes = np.array(bboxes, dtype=np.float32) if bboxes \
+            else np.zeros((0, 8), dtype=np.float32)
+    labels = np.array(labels, dtype=np.int64) if labels \
+            else np.zeros((0, ), dtype=np.int64)
     anns = dict(bboxes=bboxes, labels=labels)
     content['ann'] = anns
     return content

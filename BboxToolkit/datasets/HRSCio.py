@@ -95,13 +95,13 @@ def _load_hrsc_xml(xmlfile, img_keys=dict(), obj_keys=dict()):
                 value = None if node is None else node.text
                 ann[k].append(value)
 
-    hbboxes = np.array(hbboxes, dtype=np.float) if hbboxes \
-            else np.zeros((0, 4), dtype=np.float)
-    bboxes = np.array(bboxes, dtype=np.float) if bboxes \
-            else np.zeros((0, 5), dtype=np.float)
-    diffs = np.array(diffs, dtype=np.int) if diffs \
-            else np.zeros((0, ), dtype=np.int)
-    labels = np.zeros((bboxes.shape[0], ), dtype=np.int)
+    hbboxes = np.array(hbboxes, dtype=np.float32) if hbboxes \
+            else np.zeros((0, 4), dtype=np.float32)
+    bboxes = np.array(bboxes, dtype=np.float32) if bboxes \
+            else np.zeros((0, 5), dtype=np.float32)
+    diffs = np.array(diffs, dtype=np.int64) if diffs \
+            else np.zeros((0, ), dtype=np.int64)
+    labels = np.zeros((bboxes.shape[0], ), dtype=np.int64)
 
     ann['hbboxes'] = hbboxes
     ann['bboxes'] = bboxes

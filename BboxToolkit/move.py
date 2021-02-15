@@ -9,10 +9,12 @@ def translate(bboxes, x, y):
 
     if get_bbox_type(bboxes) == 'obb':
         translated = bboxes.copy()
-        translated[..., :2] = translated[..., :2] + np.array([x, y])
+        translated[..., :2] = translated[..., :2] + \
+                np.array([x, y], dtype=np.float32)
     else:
         dim = bboxes.shape[-1]
-        translated = bboxes + np.array([x, y]*int(dim/2))
+        translated = bboxes + \
+                np.array([x, y]*int(dim/2), dtype=np.float32)
     return translated
 
 
