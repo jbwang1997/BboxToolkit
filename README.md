@@ -1,14 +1,26 @@
-## Introduction
-BboxToolkit is a tiny library including common operations for HBB(horizontal bboxes), OBB(Oriented bboxes), and POLY(poly bboxes).
-The whole BboxToolkit is written by python and not requires compiling.
-So it's easy to install BboxToolkit and use it in other projects. 
-We have already implemented some tools using BboxToolkit for ease of use.
+# BboxToolkit
+
+BboxToolkit is a light codebase collecting some practical functions for the special-shape detection, such as oriented detection.
+The whole project is written by python, which can run in different platform without compliation. 
+We use this project to support the oriented detection benchmark [OBBDetection](http://github.com/jbwang1997/OBBDetection).
+
+**news**: We are now developing the BboxToolkit v2.0 intended to support the new OBBDetection based on MMdetection v2.10.
+
+## Main Features
+
+- **Various type of Bboxes**
+
+    We define three different type of bounding boxes in BboxToolkit. They are horizontal bounding boxes (HBB), oriented bounding boxes (OBB), and 4 point polygon (POLY). Each type of boxes can convert to others easily.
+
+- **Convinence for usage**
+
+    The functions in BboxToolkit will decide the box type according to the input shape. There is no need to concern about the input box type, when use BboxToolkit.
 
 ## License
+
 This project is released under the [Apache 2.0 license](LICENSE)
 
-## Dependencies
-BboxToolkit will automatically install dependencies when you install, so this section is mostly for your reference.
+## Installation
 
 BboxToolkit requires following dependencies:
 
@@ -19,39 +31,18 @@ BboxToolkit requires following dependencies:
 + Terminaltables
 + Pillow
 
-## Installation
-BboxToolkit is written by python, no compilation is required.
+BboxToolkit will automatically install dependencies when you install, so this section is mostly for your reference.
 
-```
+```shell
 git clone https://github.com/jbwang1997/BboxToolkit
 cd BboxToolkit
-
-python setup.py develop
+pip install -v -e . # or "python setup.py develop"
 ```
 
 ## Usage
-### Definition
-There are three types of bboxes defining in BboxToolkit.
 
-![bboxes define](definition.png)
-
-HBB is denoted by the left-top point and right-bottom point like most detection dataset.
-
-OBB is denoted by center point(x, y), width(w), height(h) and theta.
-width is the longer side, height is the shorter side, theta is the angle between width and x-axis, we define clockwise as positive.
-So, there must be w>h and theta∈[-pi/2, pi/2).
-
-POLY is denoted by four points.
-The order of these points doesn't matter, but the adjacent points should be a side of POLY.
-
-### Function API
-We will develop API documents in a late update.
+Please reference [USAGE.md](USAGE.md) for detail.
 
 ## Ackonwledgement
-BboxToolkit refers to [DOTA_devkit](https://github.com/CAPTAIN-WHU/DOTA_devkit), [MMCV](https://github.com/open-mmlab/mmcv), and [MMDetection](https://github.com/open-mmlab/mmdetection).
 
-[DOTA_devkit](https://github.com/CAPTAIN-WHU/DOTA_devkit) is the toolbox for [DOTA](https://arxiv.org/abs/1711.10398) Dataset
-
-[MMCV](https://github.com/open-mmlab/mmcv) is a foundational python library for computer vision.
-
-[MMDetection](https://github.com/open-mmlab/mmdetection) is an open source object detection toolbox based on PyTorch.
+BboxToolkit refers to [DOTA_devkit](https://github.com/CAPTAIN-WHU/DOTA_devkit), [MMCV](https://github.com/open-mmlab/mmcv), and [MMDetection](https://github.com/open-mmlab/mmdetection). [DOTA_devkit](https://github.com/CAPTAIN-WHU/DOTA_devkit) is the toolbox for [DOTA](https://arxiv.org/abs/1711.10398) Dataset [MMCV](https://github.com/open-mmlab/mmcv) is a foundational python library for computer vision. [MMDetection](https://github.com/open-mmlab/mmdetection) is an open source object detection toolbox based on PyTorch.
