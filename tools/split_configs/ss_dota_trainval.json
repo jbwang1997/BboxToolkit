@@ -2,12 +2,12 @@
     "nproc": 10,
     "load_type": "dota",
     "img_dirs": [
-       "/data2/wjb/dataset/DOTA/train/images/images",
-       "/data2/wjb/dataset/DOTA/val/images/images"
+        "path/to/DOTA/train/images/",
+        "path/to/DOTA/val/images/"
     ],
     "ann_dirs": [
-        "/data2/wjb/dataset/DOTA/train/labelTxt-v1.0",
-        "/data2/wjb/dataset/DOTA/val/labelTxt-v1.0"
+        "path/to/DOTA/train/labels/",
+        "path/to/DOTA/val/labels/"
     ],
     "classes": null,
     "prior_annfile": null,
@@ -27,6 +27,6 @@
     "padding_value": [
         104, 116, 124
     ],
-    "save_dir": "/data2/wjb/dataset/ss_dota_split/trainval",
+    "save_dir": "path/to/ss/splitted/trainval/",
     "save_ext": ".png"
 }

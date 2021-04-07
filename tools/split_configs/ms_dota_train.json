@@ -2,10 +2,10 @@
     "nproc": 10,
     "load_type": "dota",
     "img_dirs": [
-        "/data2/wjb/dataset/DOTA/train/images/images"
+        "path/to/DOTA/train/images/"
     ],
     "ann_dirs": [
-        "/data2/wjb/dataset/DOTA/train/labelTxt-v1.0"
+        "path/to/DOTA/train/labels/"
     ],
     "classes": null,
     "prior_annfile": null,
@@ -25,6 +25,6 @@
     "padding_value": [
         104, 116, 124
     ],
-    "save_dir": "/data2/wjb/dataset/ms_dota_split/train",
+    "save_dir": "path/to/ms/splitted/train/",
     "save_ext": ".png"
 }

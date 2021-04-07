@@ -2,7 +2,7 @@
     "nproc": 10,
     "load_type": "dota",
     "img_dirs": [
-        "/data2/wjb/dataset/DOTA/test/images/images"
+        "path/to/DOTA/test/images/"
     ],
     "ann_dirs": null,
     "classes": null,
@@ -23,6 +23,6 @@
     "padding_value": [
         104, 116, 124
     ],
-    "save_dir": "/data2/wjb/dataset/ss_dota_split/test",
+    "save_dir": "path/to/ss/splitted/test/",
     "save_ext": ".png"
 }
