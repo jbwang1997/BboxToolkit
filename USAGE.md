@@ -43,6 +43,9 @@ python img_split.py --base_json split_configs/ss_dota_train.json
 python image_split.py --load_type dota --img_dirs {image path} --ann_dirs {annotation path} --sizes 1024 --gaps 200 --save_dir {saving path}
 ```
 
+**note**: The json file starting with ss means 'single scale', and ms means 'multiple scales'.
+
+
 The structure of splitted dataset:
 
 ```
