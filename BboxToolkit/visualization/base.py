@@ -51,6 +51,10 @@ def color_val(color):
         raise TypeError('Invalid type for color: {}'.format(type(color)))
 
 
+def imdraw():
+    pass
+
+
 def imshow(img, win_name='', wait_time=0, max_size=1000):
     """Show an image.
 
@@ -79,4 +83,3 @@ def imshow(img, win_name='', wait_time=0, max_size=1000):
                 break
     else:
         ret = cv2.waitKey(wait_time)
-
