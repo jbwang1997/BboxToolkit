@@ -1,5 +1,4 @@
-# Refer to mmcv.visualization
-# https://github.com/open-mmlab/mmcv
+# Refer to mmcv: https://github.com/open-mmlab/mmcv
 
 import cv2
 import numpy as np
@@ -49,3 +48,8 @@ def color_val(color):
         return tuple(color)
     else:
         raise TypeError('Invalid type for color: {}'.format(type(color)))
+
+
+def color_rand(num):
+    pass
+
