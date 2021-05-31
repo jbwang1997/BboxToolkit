@@ -50,7 +50,7 @@ class HBB(BaseBbox):
         return (bboxes[..., 2] - bboxes[..., 0]) * \
                 (bboxes[..., 3] - bboxes[..., 1])
 
-    def flip_(self, W, H, direction='horizontal'):
+    def flip(self, W, H, direction='horizontal'):
         assert direction in ['horizontal', 'vertical', 'diagonal']
         bboxes = self.bboxes
 
@@ -67,14 +67,18 @@ class HBB(BaseBbox):
             flipped[..., 2::4] = W - bboxes[..., 0::4]
             flipped[..., 3::4] = H - bboxes[..., 1::4]
 
-        self.bboxes = flipped
+        return type(self)(flipped, self.scores)
 
-    def translate_(self, x, y):
-        self.bboxes += np.array((x, y) * 2, dtype=np.float32)
+    def translate(self, x, y):
+        new_bboxes = self.bboxes + np.array(
+            (x, y) * 2, dtype=np.float32)
+        return type(self)(new_bboxes, self.scores)
 
-    def rescale_(self, scales):
+    def rescale(self, scales):
         if isinstance(scales, (tuple, list)):
             assert len(scales) == 2
-            self.bboxes *= np.array(scales * 2, dtype=np.float32)
+            new_bboxes = self.bboxes * np.array(
+                scales * 2, dtype=np.float32)
         else:
-            self.bboxes *= scales
+            new_bboxes = self.bboxes * scales
+        return type(self)(new_bboxes, self.scores)

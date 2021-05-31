@@ -5,6 +5,80 @@ import numpy as np
 
 class BaseBbox:
 
+    Bdim = None
+
+    def __init__(self, bboxes, scores=None):
+        assert self.Bdim is not None
+        dim = bboxes.shape[-1]
+        bboxes = bboxes.astype(np.float32)
+        scores = scores if scores is None else \
+                scores.astype(np.float32)
+
+        if dim == self.Bdim:
+            if scores is not None:
+                assert bboxes.ndim == scores.ndim + 1
+            self.bboxes = bboxes
+            self.scores = scores
+        elif dim == self.Bdim+1:
+            assert scores is None
+            self.bboxes = bboxes[..., :-1]
+            self.scores = bboxes[..., -1]
+        else:
+            raise ValueError(f'The dim of {type(self).__name__} '
+                             f'need to be {self.Bdim} or {self.Bdim+1}, '
+                             f'but get {dim}')
+
+
+    ## special functions for instance
+    def copy(self):
+        return type(self)(self.bboxes, self.scores)
+
+    def flatten(self):
+        dim = self.bboxes.shape[-1]
+        return self.reshape((-1, dim))
+
+    def reshape(self, new_shape):
+        bboxes = self.bboxes
+        new_bboxes = np.reshape(bboxes, new_shape)
+        assert new_bboxes.shape[-1] == bboxes.shape[-1], \
+                "reshape function can not change bboxes last dimension"
+        new_scores = np.reshape(self.scores, new_shape[:-1]) \
+                if self.scores is not None else None
+        return type(self)(new_bboxes, new_scores)
+
+    @property
+    def shape(self):
+        return self.bboxes.shape
+
+    @property
+    def is_empty(self):
+        return self.bboxes.numel() == 0
+
+    @property
+    def with_scores(self):
+        return self.scores is not None
+
+    def __getitem__(self, index):
+        bboxes = self.bboxes
+        scores = self.scores
+        if isinstance(index, tuple):
+            assert len(index) < bboxes.ndim
+        elif isinstance(index, np.ndarray):
+            assert index.ndim < bboxes.ndim
+        elif isinstance(index, int):
+            assert bboxes.ndim > 2
+
+        bboxes = bboxes[index]
+        scores = None if scores is None else scores[index]
+        return type(self)(bboxes, scores)
+
+    def __repr__(self):
+        repr_str = type(self).__name__
+        repr_str += f'(bboxes={self.bboxes}, '
+        repr_str += f'scores={self.scores})'
+        return repr_str
+
+
     ## functions about transformation
     TRAN_SHORTCUTS = dict()
 
@@ -53,44 +127,21 @@ class BaseBbox:
         return new_type.from_poly(align_polys)
 
 
-    ## functions for instances
-    Bdim = None
-
-    def __init__(self, bboxes, scores=None):
-        assert self.Bdim is not None
-        dim = bboxes.shape[-1]
-        bboxes = bboxes.astype(np.float32)
-        scores = scores if scores is None else \
-                scores.astype(np.float32)
-
-        if dim == self.Bdim:
-            if scores is not None:
-                assert bboxes.ndim == scores.ndim + 1
-            self.bboxes = bboxes
-            self.scores = scores
-        elif dim == self.Bdim+1:
-            assert scores is None
-            self.bboxes = bboxes[..., :-1]
-            self.scores = bboxes[..., -1]
-        else:
-            raise ValueError(f'The dim of {type(self).__name__} '
-                             f'need to be {self.Bdim} or {self.Bdim+1}, '
-                             f'but get {dim}')
-
-    def copy(self):
-        return type(self)(self.bboxes, self.scores)
-
-    def roatate_(self, center, angle):
+    ## functions for distortion
+    def roatate(self, center, angle):
         M = cv2.getRotationMatrix2D(center, angle, 1)
-        self.warp_(M)
+        return self.warp(M)
 
-    def warp_(self, M):
+    def warp(self, M):
         polys = self.bbox_to_poly(self.bboxes)
         shape = polys.shape
+
         group_pts = polys.reshape(*shape[:-1], shape[-1]//2, 2)
         warped_pts = self.warp_pts(group_pts, M)
         warped_polys = warped_pts.reshape(*shape)
-        self.bboxes = self.bbox_from_poly(warped_polys)
+
+        new_bboxes = self.bbox_from_poly(warped_polys)
+        return type(self)(new_bboxes, self.scores)
 
     @staticmethod
     def warp_pts(pts, M):
@@ -100,27 +151,8 @@ class BaseBbox:
             warped_pts = (warped_pts/warped_pts[..., -1:])[..., :-1]
         return warped_pts
 
-    def __getitem__(self, index):
-        bboxes = self.bboxes
-        scores = self.scores
-        if isinstance(index, tuple):
-            assert len(index) < bboxes.ndim
-        elif isinstance(index, np.ndarray):
-            assert index.ndim < bboxes.ndim
-        elif isinstance(index, int):
-            assert bboxes.ndim > 2
 
-        bboxes = bboxes[index]
-        scores = None if scores is None else scores[index]
-        return type(self)(bboxes, scores)
-
-    def __repr__(self):
-        repr_str = type(self).__name__
-        repr_str += f'(bboxes={self.bboxes}, '
-        repr_str += f'scores={self.scores})'
-        return repr_str
-
-    ## need to implement
+    ## functions need to be implemented by subclasses
     @classmethod
     def gen_empty(cls, with_scores=False):
         raise NotImplementedError
@@ -140,15 +172,14 @@ class BaseBbox:
     def areas(self):
         raise NotImplementedError
 
-    def flip_(self, W, H, direction='horizontal'):
+    def flip(self, W, H, direction='horizontal'):
         raise NotImplementedError
 
-    def translate_(self, x, y):
+    def translate(self, x, y):
         raise NotImplementedError
 
-    def rescale_(self, scales):
+    def rescale(self, scales):
         raise NotImplementedError
-
 
 
 class AlignPOLY(BaseBbox):
@@ -185,7 +216,7 @@ class AlignPOLY(BaseBbox):
                 bboxes_[..., 0::2] * bboxes[..., 1::2]
         return np.abs(0.5 * areas.sum(dim=-1))
 
-    def flip_(self, W, H, direction='horizontal'):
+    def flip(self, W, H, direction='horizontal'):
         assert direction in ['horizontal', 'vertical', 'diagonal']
         bboxes = self.bboxes
 
@@ -198,18 +229,20 @@ class AlignPOLY(BaseBbox):
             flipped[..., 0::2] = W - bboxes[..., 0::2]
             flipped[..., 1::2] = H - bboxes[..., 1::2]
 
-        self.bboxes = flipped
+        return type(self)(flipped, self.scores)
 
-    def translate_(self, x, y):
+    def translate(self, x, y):
         dim = self.bboxes.shape[-1]
-        self.bboxes += np.array(
+        new_bboxes = self.bboxes + np.array(
             (x, y) * (dim//2), dtype=np.float32)
+        return type(self)(new_bboxes, self.scores)
 
-    def rescale_(self, scales):
+    def rescale(self, scales):
         if isinstance(scales, (tuple, list)):
             assert len(scales) == 2
             dim = self.bboxes.shape[-1]
-            self.bboxes *= np.array(
+            new_bboxes = self.bboxes * np.array(
                 scales * (dim//2), dtype=np.float32)
         else:
-            self.bboxes *= scales
+            new_bboxes = self.bboxes * scales
+        return type(self)(new_bboxes, self.scores)

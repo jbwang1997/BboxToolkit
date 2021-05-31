@@ -90,7 +90,7 @@ class OBB(BaseBbox):
         return bboxes[..., 2] * bboxes[..., 3]
 
     # self-changing functions
-    def flip_(self, W, H, direction='horizontal'):
+    def flip(self, W, H, direction='horizontal'):
         assert direction in ['horizontal', 'vertical', 'diagonal']
         bboxes = self.bboxes
 
@@ -105,23 +105,26 @@ class OBB(BaseBbox):
             flipped[..., 0] = W - bboxes[..., 0]
             flipped[..., 1] = H - bboxes[..., 1]
 
-        flipped = self.regulate_obb(flipped)
-        self.bboxes = flipped
+        return type(self)(self.regulate_obb(flipped), self.scores)
 
-    def translate_(self, x, y):
-        self.bboxes[..., :2] += np.array((x, y), dtype=np.float32)
+    def translate(self, x, y):
+        new_bboxes = self.bboxes.copy()
+        new_bboxes[..., :2] += np.array((x, y), dtype=np.float32)
+        return type(self)(new_bboxes, self.scores)
 
-    def rotate_(self, center, angle):
+    def rotate(self, center, angle):
         M = cv2.getRotationMatrix2D(center, angle, 1)
         ctr, w, h, t = np.split(self.bboxes, (2, 3, 4), axis=-1)
         ctr = self.warp_pts(ctr, M)
         t = t - angle / 180 * pi
         bboxes = np.concatenate([ctr, w, h, t], aixs=-1)
-        self.bboxes = self.regulate_obb(bboxes)
+        return type(self)(self.regulate_obb(bboxes), self.scores)
 
-    def rescale_(self, scales):
+    def rescale(self, scales):
+        new_bboxes = self.bboxes.copy()
         if isinstance(scales, (tuple, list)):
             assert len(scales) == 2
-            self.bboxes[..., 2:4] *= np.array(scales, dtype=np.float32)
+            new_bboxes[..., :4] *= np.array(scales*2, dtype=np.float32)
         else:
-            self.bboxes[..., 2:4] *= scales
+            new_bboxes[..., :4] *= scales
+        return type(self)(new_bboxes, self.scores)
