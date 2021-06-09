@@ -6,3 +6,4 @@ from .pt import PT
 
 from .shortcuts import (poly2obb, poly2hbb, obb2poly, obb2hbb,
                         hbb2poly, hbb2obb)
+from .functions import cat, split
