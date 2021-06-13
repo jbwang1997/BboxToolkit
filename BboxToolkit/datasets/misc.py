@@ -1,78 +1,8 @@
 import os.path as osp
 import numpy as np
-import warnings
-
-from PIL import Image
-
-dataset_classes = {
-    'DOTA1': ('large-vehicle', 'swimming-pool', 'helicopter', 'bridge',
-              'plane', 'ship', 'soccer-ball-field', 'basketball-court',
-              'ground-track-field', 'small-vehicle', 'baseball-diamond',
-              'tennis-court', 'roundabout', 'storage-tank', 'harbor'),
-    'DOTA1_5': ('large-vehicle', 'swimming-pool', 'helicopter', 'bridge',
-                'plane', 'ship', 'soccer-ball-field', 'basketball-court',
-                'ground-track-field', 'small-vehicle', 'baseball-diamond',
-                'tennis-court', 'roundabout', 'storage-tank', 'harbor',
-                'container-crane'),
-    'DIOR': ('airplane', 'airport', 'baseballfield', 'basketballcourt', 'bridge',
-             'chimney', 'expressway-service-area', 'expressway-toll-station',
-             'dam', 'golffield', 'groundtrackfield', 'harbor', 'overpass', 'ship',
-             'stadium', 'storagetank', 'tenniscourt', 'trainstation', 'vehicle',
-             'windmill'),
-    'HRSC': ('ship', ),
-}
-
-dataset_aliases = {
-    'DOTA1': ['dota', 'dota1', 'DOTA', 'DOTA1'],
-    'DOTA1_5': ['dota1.5', 'dota1_5', 'DOTA1.5', 'DOTA1_5'],
-    'DIOR': ['dior', 'DIOR'],
-    'HRSC': ['hrsc', 'HRSC']
-}
-
-img_exts = ['.jpg', '.png', '.tif', '.bmp']
 
 
-def read_img_info(imgpath):
-    imgfile = osp.split(imgpath)[-1]
-    img_id, ext = osp.splitext(imgfile)
-    if ext not in img_exts:
-        return None
-
-    size = Image.open(imgpath).size
-    content = dict(width=size[0], height=size[1], filename=imgfile, id=img_id)
-    return content
-
-
-def get_classes(alias_or_list):
-    if isinstance(alias_or_list, str):
-        if osp.isfile(alias_or_list):
-            class_names = []
-            with open(alias_or_list) as f:
-                for line in f:
-                    class_names.append(line.strip())
-            return tuple(class_names)
-
-        for k, v in dataset_aliases.items():
-            if alias_or_list in v:
-                return dataset_classes[k]
-        raise ValueError('Unrecognized alias: {}'.format(alias_or_list))
-
-    if isinstance(alias_or_list, (list, tuple)):
-        classes = []
-        for item in alias_or_list:
-            for k, v in dataset_aliases.items():
-                if item in v:
-                    classes.extend(dataset_classes[k])
-                    break
-            else:
-                classes.append(item)
-        return tuple(classes)
-
-    raise TypeError(
-        f'input must be a str, list or tuple but got {type(alias_or_list)}')
-
-
-def change_cls_order(contents, old_classes, new_classes):
+def change_cls_order(data, old_classes, new_classes):
     for n_c, o_c in zip(new_classes, old_classes):
         if n_c != o_c:
             break
@@ -85,65 +15,34 @@ def change_cls_order(contents, old_classes, new_classes):
                   for cls in old_classes]
     lbl_mapper = np.array(lbl_mapper, dtype=np.int64)
 
-    for content in contents:
-        new_labels = lbl_mapper[content['ann']['labels']]
+    for d in data:
+        if 'labels' not in d['ann']:
+            continue
+
+        new_labels = lbl_mapper[d['ann']['labels']]
+        d['ann']['labels'] = new_labels
+
         if (new_labels == -1).any():
+            assert new_labels.ndim == 1
             inds = np.nonzero(new_labels != -1)[0]
-            for k, v in content['ann'].items():
+            for k, v in d['ann'].items():
                 try:
-                    content['ann'][k] = v[inds]
+                    d['ann'][k] = v[inds]
                 except TypeError:
-                    content['ann'][k] = [v[i] for i in inds]
-        else:
-            content['ann']['labels'] = new_labels
+                    d['ann'][k] = type(v)([v[i] for i in inds])
 
 
-def merge_prior_contents(bases, priors, merge_type='addition'):
-    id_mapper = {base['id']: i for i, base in enumerate(bases)}
-    for prior in priors:
-        img_id = prior['id']
-        if img_id not in id_mapper:
-            continue
+def split_imgset(data, img_set):
+    if isinstance(img_set, str):
+        with open(img_set, 'r') as f:
+            img_set = [s.strip() for s in f]
+    else:
+        assert isinstance(img_set, list)
 
-        base = bases[id_mapper[img_id]]
-        for key in prior.keys():
-            if key in ['id', 'filename', 'width', 'height', 'ann']:
-                continue
-            if (key not in base) or (base[key] is None) or (merge_type == 'replace'):
-                base[key] = prior[key]
-
-        if 'ann' in prior:
-            if not base.get('ann', {}):
-                base['ann'] = prior['ann']
-            else:
-                base_anns, prior_anns = base['ann'], prior['ann']
-                assert base_anns.keys() == prior_anns.keys()
-                for key in prior_anns:
-                    if isinstance(base_anns[key], np.ndarray):
-                        base_anns[key] = prior_anns[key] if merge_type == 'replace' \
-                                else np.concatenate([base_anns[key], prior_anns[key]], axis=0)
-                    elif isinstance(base_anns[key], list):
-                        base_anns[key] = prior_anns[key] if merge_type == 'replace' \
-                                else base_anns[key].update(prior_anns[key])
-                    else:
-                        raise TypeError("annotations only support np.ndarrya and list"+
-                                        f", but get {type(base_anns[key])}")
-
-
-def split_imgset(contents, imgset):
-    id_mapper = {content['id']: i for i, content in enumerate(contents)}
-    assert isinstance(imgset, (list, tuple, str))
-    if isinstance(imgset, str):
-        with open(imgset, 'r') as f:
-            imgset = [line for line in f]
-
-    imgset_contents = []
-    for img_id in imgset:
-        img_id = osp.split(img_id.strip())[-1]
+    new_data = []
+    id_mapper = {osp.splitext(d['filename'])[0]: d for d in data}
+    for img_id in img_set:
         img_id = osp.splitext(img_id)[0]
-        if img_id not in id_mapper:
-            warnings.warn(f"Can't find ID:{img_id} image!")
-            continue
+        new_data.append(id_mapper[img_id])
 
-        imgset_contents.append(contents[id_mapper[img_id]])
-    return imgset_contents
+    return new_data

@@ -35,7 +35,7 @@ def load_dota(img_dir, ann_dir=None, classes=None, nproc=10):
         contents = list(map(_load_func, os.listdir(img_dir)))
     contents = [c for c in contents if c is not None]
     end_time = time.time()
-    print(f'Finishing loading DOTA, get {len(contents)} iamges,',
+    print(f'Finishing loading DOTA, get {len(contents)} images,',
           f'using {end_time-start_time:.3f}s.')
 
     return contents, classes
