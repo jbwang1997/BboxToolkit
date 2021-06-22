@@ -1,8 +1,6 @@
-#
 # References:
 # https://github.com/shibukawa/imagesize_py
 # https://github.com/jerem/ImageSize
-#
 
 
 import re
