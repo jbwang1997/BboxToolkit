@@ -5,7 +5,7 @@ from collections.abc import Iterable
 from .base import AlignPOLY
 
 
-class POLY(AlignPOLY):
+class P4POLY(AlignPOLY):
     Bdim = 8
 
     def __init__(self, bboxes, scores=None):

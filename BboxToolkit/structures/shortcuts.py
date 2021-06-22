@@ -3,12 +3,12 @@ import numpy as np
 from .base import BaseBbox
 from .hbb import HBB
 from .obb import OBB
-from .poly import POLY
+from .poly import P4POLY
 
 pi = np.pi
 
 
-@BaseBbox.register_tran_shortcuts(POLY, OBB)
+@BaseBbox.register_shortcuts(P4POLY, OBB)
 def poly2obb(instance):
     polys = instance.bboxes
     order = polys.shape[:-1]
@@ -22,7 +22,7 @@ def poly2obb(instance):
     return OBB(obboxes, instance.scores)
 
 
-@BaseBbox.register_tran_shortcuts(POLY, HBB)
+@BaseBbox.register_shortcuts(P4POLY, HBB)
 def poly2hbb(instance):
     polys = instance.bboxes
     shape = polys.shape
@@ -33,7 +33,7 @@ def poly2hbb(instance):
                instance.scores)
 
 
-@BaseBbox.register_tran_shortcuts(OBB, POLY)
+@BaseBbox.register_shortcuts(OBB, P4POLY)
 def obb2poly(instance):
     ctr, w, h, theta = np.split(instance.bboxes, (2, 3, 4), axis=-1)
     Cos, Sin = np.cos(theta), np.sin(theta)
@@ -47,11 +47,11 @@ def obb2poly(instance):
     pt2 = ctr + vec1 - vec2
     pt3 = ctr - vec1 - vec2
     pt4 = ctr - vec1 + vec2
-    return POLY(np.concatenate([pt1, pt2, pt3, pt4], axis=-1),
-                instance.scores)
+    return P4POLY(np.concatenate([pt1, pt2, pt3, pt4], axis=-1),
+                  instance.scores)
 
 
-@BaseBbox.register_tran_shortcuts(OBB, HBB)
+@BaseBbox.register_shortcuts(OBB, HBB)
 def obb2hbb(instance):
     obboxes = instance.bboxes
     ctr, w, h, theta = np.split(obboxes, (2, 3, 4), axis=-1)
@@ -63,15 +63,15 @@ def obb2hbb(instance):
                instance.scores)
 
 
-@BaseBbox.register_tran_shortcuts(HBB, POLY)
+@BaseBbox.register_shortcuts(HBB, P4POLY)
 def hbb2poly(instance):
     hbboxes = instance.bboxes
     l, t, r, b = np.split(hbboxes, 4, axis=-1)
-    return POLY(np.stack([l, t, r, t, r, b, l, b], axis=-1),
-                instance.scores)
+    return P4POLY(np.stack([l, t, r, t, r, b, l, b], axis=-1),
+                  instance.scores)
 
 
-@BaseBbox.register_tran_shortcuts(HBB, OBB)
+@BaseBbox.register_shortcuts(HBB, OBB)
 def hbb2obb(instance):
     hbboxes = instance.bboxes
     order = hbboxes.shape[:-1]
