@@ -1,56 +1,95 @@
+import cv2
 import numpy as np
-from collections.abc import Iterable
-
 from .base import BaseBbox
 
 
 class HBB(BaseBbox):
-    Bdim = 4
+
+    def __init__(self, bboxes):
+        assert isinstance(bboxes, np.ndarray)
+        assert bboxes.ndim == 2 and bboxes.shape[1] == 4
+
+        # Copy and convert np.ndarray type of float32.
+        bboxes = bboxes.astype(np.float32)
+        self.bboxes = bboxes
+
+    def __repr__(self):
+        s = self.__class__.__name__ + '('
+        s += f'bboxes={self.bboxes})'
+        return s
+
+    def __getitem__(self, index):
+        '''see :func:`BaseBbox.__getitem__`'''
+        bboxes = self.bboxes[index]
+        return HBB(bboxes)
+
+    def __len__(self):
+        '''Number of Bboxes.'''
+        return self.bboxes.shape[0]
+
+    def to_poly(self):
+        '''Output the Bboxes polygons (list[list[np.ndarry]]).'''
+        polys = []
+        for bbox in self.bboxes:
+            xmin, ymin, xmax, ymax = bbox
+            polys.append([np.array([
+                xmin, ymin,
+                xmax, ymin,
+                xmax, ymax,
+                xmin, ymax], dtype=np.float32)])
+        return polys
+
 
     @classmethod
-    def gen_empty(cls, with_scores=False):
+    def from_poly(cls, polys):
+        '''Create a Bbox instance from polygons (list[list[np.ndarray]]).'''
+        hbbs = []
+        for poly in polys:
+            pts = np.concatenate(poly).reshape(-1, 2)
+            lt_points = pts.min(axis=0)
+            rb_points = pts.max(axis=0)
+            hbbs.append(np.concatenate([lt_points, rb_points]))
+
+        hbbs = np.stack(hbbs, axis=0)
+        return HBB(hbbs)
+
+    def copy(self):
+        '''Copy this instance.'''
+        return HBB(self.bboxes)
+
+    def gen_empty(self):
+        '''Create a Bbox instance with len == 0.'''
         bboxes = np.zeros((0, 4), dtype=np.float32)
-        scores = (None if not with_scores else
-                  np.zeros((0, ), dtype=np.float32))
-        return cls(bboxes, scores)
-
-    @classmethod
-    def gen_random(cls, shape, scale=1, with_scores=False):
-        if isinstance(shape, Iterable):
-            shape = tuple(shape)
-        else:
-            shape = (shape, )
-        shape = shape + (4, )
-
-        border = scale * np.random.random(shape).astype(np.float32)
-        xmin = np.minimum(border[..., 0], border[..., 2])
-        ymin = np.minimum(border[..., 1], border[..., 3])
-        xmax = np.maximum(border[..., 0], border[..., 2])
-        ymax = np.maximum(border[..., 1], border[..., 3])
-        scores = (None if not with_scores else
-                  np.random.random(shape[:-1]).astype(np.float32))
-
-        return cls(np.stack([xmin, ymin, xmax, ymax], axis=1), scores)
-
-    @staticmethod
-    def bbox_from_poly(polys):
-        shape = polys.shape
-        polys = polys.reshape(*shape[:-1], shape[-1]//2, 2)
-        lt_point = np.min(polys, axis=-2)
-        rb_point = np.max(polys, axis=-2)
-        return np.concatenate([lt_point, rb_point], axis=-1)
-
-    @staticmethod
-    def bbox_to_poly(bboxes):
-        l, t, r, b = np.split(bboxes, 4, axis=-1)
-        return np.stack([l, t, r, t, r, b, l, b], axis=-1)
+        return HBB(bboxes)
 
     def areas(self):
+        '''Return areas of Bboxes.'''
         bboxes = self.bboxes
         return (bboxes[..., 2] - bboxes[..., 0]) * \
                 (bboxes[..., 3] - bboxes[..., 1])
 
+    def warp(self, M):
+        '''see :func:`BaseBox.warp`'''
+        # List the points of HBBs.
+        l, t, r, b = np.split(self.bboxes, 4, axis=-1)
+        pts = np.stack([l, t, r, t, r, b, l, b], axis=-1)
+        pts = pts.reshape(-1, 4, 2)
+
+        # Warp points
+        if M.shape[0] == 2:
+            warped_pts = cv2.transform(pts, M)
+        elif M.shape[0] == 3:
+            warped_pts = cv2.prospectivetransform(pts, M)
+        else:
+            raise ValueError(f'Wrong M shape of {M.shape}')
+
+        # Transform points to HBB
+        lt_points = warped_pts.min(axis=1)
+        rb_points = warped_pts.max(axis=1)
+        return HBB(np.concatenate([lt_points, rb_points], axis=-1))
+
     def flip(self, W, H, direction='horizontal'):
+        '''see :func:`BaseBbox.flip`'''
         assert direction in ['horizontal', 'vertical', 'diagonal']
         bboxes = self.bboxes
 
@@ -67,18 +106,18 @@ class HBB(BaseBbox):
             flipped[..., 2::4] = W - bboxes[..., 0::4]
             flipped[..., 3::4] = H - bboxes[..., 1::4]
 
-        return type(self)(flipped, self.scores)
+        return HBB(flipped)
 
     def translate(self, x, y):
-        new_bboxes = self.bboxes + np.array(
-            (x, y) * 2, dtype=np.float32)
-        return type(self)(new_bboxes, self.scores)
+        '''see :func:`BaseBbox.translate`'''
+        bboxes = self.bboxes + np.array([x, y, x, y], dtype=np.float32)
+        return HBB(bboxes)
 
-    def rescale(self, scales):
-        if isinstance(scales, (tuple, list)):
-            assert len(scales) == 2
-            new_bboxes = self.bboxes * np.array(
-                scales * 2, dtype=np.float32)
+    def resize(self, ratios):
+        '''see :func:`BaseBbox.resize`'''
+        if isinstance(ratios, (tuple, list)):
+            assert len(ratios) == 2
+            bboxes = self.bboxes * np.array(ratios * 2, dtype=np.float32)
         else:
-            new_bboxes = self.bboxes * scales
-        return type(self)(new_bboxes, self.scores)
+            bboxes = self.bboxes * ratios
+        return HBB(bboxes)

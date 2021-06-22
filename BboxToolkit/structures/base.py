@@ -1,248 +1,161 @@
-import cv2
-import inspect
-import numpy as np
+from abc import ABCMeta, abstractmethod
 
 
-class BaseBbox:
+class BaseBbox(metaclass=ABCMeta):
+    '''
+    This class is the Base class for all types of Bboxes. In this class,
+    we design the feature of transformation and some abstract functions.
+    '''
 
-    Bdim = None
-
-    def __init__(self, bboxes, scores=None):
-        assert self.Bdim is not None
-        dim = bboxes.shape[-1]
-        bboxes = bboxes.astype(np.float32)
-        scores = scores if scores is None else \
-                scores.astype(np.float32)
-
-        if dim == self.Bdim:
-            if scores is not None:
-                assert bboxes.ndim == scores.ndim + 1
-            self.bboxes = bboxes
-            self.scores = scores
-        elif dim == self.Bdim+1:
-            assert scores is None
-            self.bboxes = bboxes[..., :-1]
-            self.scores = bboxes[..., -1]
-        else:
-            raise ValueError(f'The dim of {type(self).__name__} '
-                             f'need to be {self.Bdim} or {self.Bdim+1}, '
-                             f'but get {dim}')
-
-
-    ## special functions for instance
-    def copy(self):
-        return type(self)(self.bboxes, self.scores)
-
-    def flatten(self):
-        dim = self.bboxes.shape[-1]
-        return self.reshape((-1, dim))
-
-    def reshape(self, new_shape):
-        bboxes = self.bboxes
-        new_bboxes = np.reshape(bboxes, new_shape)
-        assert new_bboxes.shape[-1] == bboxes.shape[-1], \
-                "reshape function can not change bboxes last dimension"
-        new_scores = np.reshape(self.scores, new_shape[:-1]) \
-                if self.scores is not None else None
-        return type(self)(new_bboxes, new_scores)
-
-    @property
-    def shape(self):
-        return self.bboxes.shape
-
-    @property
-    def is_empty(self):
-        return self.bboxes.numel() == 0
-
-    @property
-    def with_scores(self):
-        return self.scores is not None
-
-    def __getitem__(self, index):
-        bboxes = self.bboxes
-        scores = self.scores
-        if isinstance(index, tuple):
-            assert len(index) < bboxes.ndim
-        elif isinstance(index, np.ndarray):
-            assert index.ndim < bboxes.ndim
-        elif isinstance(index, int):
-            assert bboxes.ndim > 2
-
-        bboxes = bboxes[index]
-        scores = None if scores is None else scores[index]
-        return type(self)(bboxes, scores)
-
-    def __repr__(self):
-        repr_str = type(self).__name__
-        repr_str += f'(bboxes={self.bboxes}, '
-        repr_str += f'scores={self.scores})'
-        return repr_str
-
-
-    ## functions about transformation
+    # A dictionary contain shortcuts of transformation.
     TRAN_SHORTCUTS = dict()
 
     @classmethod
-    def register_tran_shortcuts(cls, start, end, force=False):
-        assert isinstance(start, str) or inspect.isclass(start)
-        if inspect.isclass(start):
-            start = start.__name__
-        start = start.lower()
+    def register_shortcuts(cls, start, end, force=False):
+        '''Register functions as shortucts of transformation.
 
-        assert isinstance(end, str) or inspect.isclass(end)
-        if inspect.isclass(end):
-            end = end.__name__
-        end = end.lower()
+        Args:
+            start (BaseBbox subclass (e.g., HBB)): functions input Bbox type.
+            end (BbaseBox subclass (e.g., OBB)): functions output Bbox type.
+            force (bool): whether register the shortcuts when a same name
+                shortcut has been registered.
 
-        key = start + '2' + end
+        Returns:
+            Registrar.
+        '''
+        assert isinstance(start, BaseBbox)
+        assert isinstance(end, BaseBbox)
+        assert start is not end, 'The types of start and end are same.'
+        key = start.__name__ + '2' + end.__name__
+
+        # To judge if the shortcuts has been registered.
         if (not force) and (key in cls.TRAN_SHORTCUTS):
-            raise KeyError(f'The shortcut from {start} to {end} '
-                           f'is already registered.')
+            raise KeyError(f'The shortcut {key} is already registered.')
 
         def _decorator(func):
             cls.TRAN_SHORTCUTS[key] = func
             return func
-
         return _decorator
 
-    @classmethod
-    def from_poly(cls, align_polys):
-        bboxes = align_polys.bboxes
-        return cls(cls.bbox_from_poly(bboxes), align_polys.scores)
-
-    def to_poly(self):
-        bboxes = self.bboxes
-        return AlignPOLY(self.bbox_to_poly(bboxes), self.scores)
-
     def to_type(self, new_type):
-        if not inspect.isclass(new_type):
-            raise TypeError('new_type need to be a class')
+        '''Transform Bboxes to another type. This funcution will firstly
+           use registered shortcuts to transform Bboxes. Or, it will
+           convert Bboxes using to_poly and run from_poly.
 
-        shortcut_name = type(self).__name__.lower() + '2' \
-                + new_type.__name__.lower()
-        if shortcut_name in self.TRAN_SHORTCUTS:
-            return self.TRAN_SHORTCUTS[shortcut_name](self)
+        Args:
+            new_type (BboxToolkit.strutures): the target type of Bboxes.
 
-        align_polys = self.to_poly()
-        return new_type.from_poly(align_polys)
+        Returns:
+            new_type: transformed Bboxes.
+        '''
+        assert isinstance(new_type, BaseBbox)
 
+        # Target type is same with now type, just output a copy of self.
+        if isinstance(self, new_type):
+            return self.copy()
 
-    ## functions for distortion
-    def roatate(self, center, angle):
-        M = cv2.getRotationMatrix2D(center, angle, 1)
-        return self.warp(M)
+        # The shortcut has been registered, use shortcut to transform Bboxes.
+        key = type(self).__name__ + '2' + new_type.__name__
+        if key in self.TRAN_SHORTCUTS:
+            return self.TRAN_SHORTCUTS[key](self)
 
+        polys = self.to_poly()
+        return new_type.from_poly(polys)
+
+    def __iter__(self):
+        '''Iterate all Bboxes in polygon form.'''
+        return iter(self.to_poly())
+
+    @abstractmethod
+    def __getitem__(self, index):
+        '''Index the Bboxes
+
+        Args:
+            index (int | ndarray): Indices in the format of interger or ndarray.
+
+        Returns:
+            type(self): indexed Bboxes.
+        '''
+        pass
+
+    @abstractmethod
+    def __len__(self):
+        '''Number of Bboxes.'''
+        pass
+
+    @abstractmethod
+    def to_poly(self):
+        '''Output the Bboxes polygons (list[list[np.ndarry]]).'''
+        pass
+
+    @classmethod
+    @abstractmethod
+    def from_poly(cls, polys):
+        '''Create a Bbox instance from polygons (list[list[np.ndarray]]).'''
+        pass
+
+    @abstractmethod
+    def copy(self):
+        '''Copy this instance.'''
+        pass
+
+    @abstractmethod
+    def gen_empty(self):
+        '''Create a Bbox instance with len == 0.'''
+        pass
+
+    @abstractmethod
+    def areas(self):
+        '''ndarry: areas of each instance.'''
+        pass
+
+    @abstractmethod
     def warp(self, M):
-        polys = self.bbox_to_poly(self.bboxes)
-        shape = polys.shape
+        '''Warp the Bboxes.
 
-        group_pts = polys.reshape(*shape[:-1], shape[-1]//2, 2)
-        warped_pts = self.warp_pts(group_pts, M)
-        warped_polys = warped_pts.reshape(*shape)
+        Args:
+            M (ndarray): 2x3 or 3x3 matrix.
 
-        new_bboxes = self.bbox_from_poly(warped_polys)
-        return type(self)(new_bboxes, self.scores)
+        Returns:
+            Warped Bboxes.
+        '''
+        pass
 
-    @staticmethod
-    def warp_pts(pts, M):
-        pts = np.insert(pts, 2, 1, axis=-1)
-        warped_pts = np.matmul(pts, M.T)
-        if M.shape[0] == 3:
-            warped_pts = (warped_pts/warped_pts[..., -1:])[..., :-1]
-        return warped_pts
-
-
-    ## functions need to be implemented by subclasses
-    @classmethod
-    def gen_empty(cls, with_scores=False):
-        raise NotImplementedError
-
-    @classmethod
-    def gen_random(cls, shape, scale=1, with_scores=False):
-        raise NotImplementedError
-
-    @staticmethod
-    def bbox_from_poly(polys):
-        raise NotImplementedError
-
-    @staticmethod
-    def bbox_to_poly(bboxes):
-        raise NotImplementedError
-
-    def areas(self):
-        raise NotImplementedError
-
+    @abstractmethod
     def flip(self, W, H, direction='horizontal'):
-        raise NotImplementedError
+        '''Flip Bboxes alone the given direction.
 
+        Args:
+            W (int | float): image width.
+            H (int | float): image height.
+            direction (str): 'horizontal' or 'vertical' or 'digonal'.
+
+        Returns:
+            type(self): The flipped masks.
+        '''
+        pass
+
+    @abstractmethod
     def translate(self, x, y):
-        raise NotImplementedError
+        '''Translate the Bboxes.
 
-    def rescale(self, scales):
-        raise NotImplementedError
+        Args:
+            x (int | float): translation along x axis.
+            y (int | float): translation along y axis.
 
+        Returns:
+            Translated Bboxes.
+        '''
+        pass
 
-class AlignPOLY(BaseBbox):
+    @abstractmethod
+    def resize(self, ratios):
+        '''Resize Bboxes according the ratios.
 
-    def __init__(self, bboxes, scores=None):
-        dim = bboxes.shape[-1]
-        assert dim >= 2
-        bboxes = bboxes.astype(np.float32)
-        scores = scores if scores is None else \
-                scores.astype(np.float32)
+        Args:
+            ratios (int | float | list | tuple): the resize ratios.
 
-        if dim % 2 == 0:
-            self.bboxes = bboxes
-            self.scores = scores
-        else:
-            assert scores is None
-            self.bboxes = bboxes[..., :-1]
-            self.scores = bboxes[..., -1]
-
-    @staticmethod
-    def bbox_from_poly(polys):
-        return polys
-
-    @staticmethod
-    def bbox_to_poly(bboxes):
-        return bboxes
-
-    def areas(self):
-        bboxes = self.bboxes
-        bboxes_ = np.concatenate(
-            [bboxes[..., 2:], bboxes[..., :2]], dim=-1)
-
-        areas = bboxes[..., 0::2] * bboxes_[..., 1::2] - \
-                bboxes_[..., 0::2] * bboxes[..., 1::2]
-        return np.abs(0.5 * areas.sum(dim=-1))
-
-    def flip(self, W, H, direction='horizontal'):
-        assert direction in ['horizontal', 'vertical', 'diagonal']
-        bboxes = self.bboxes
-
-        flipped = bboxes.copy()
-        if direction == 'horizontal':
-            flipped[..., 0::2] = W - bboxes[..., 0::2]
-        elif direction == 'vertical':
-            flipped[..., 1::2] = H - bboxes[..., 1::2]
-        else:
-            flipped[..., 0::2] = W - bboxes[..., 0::2]
-            flipped[..., 1::2] = H - bboxes[..., 1::2]
-
-        return type(self)(flipped, self.scores)
-
-    def translate(self, x, y):
-        dim = self.bboxes.shape[-1]
-        new_bboxes = self.bboxes + np.array(
-            (x, y) * (dim//2), dtype=np.float32)
-        return type(self)(new_bboxes, self.scores)
-
-    def rescale(self, scales):
-        if isinstance(scales, (tuple, list)):
-            assert len(scales) == 2
-            dim = self.bboxes.shape[-1]
-            new_bboxes = self.bboxes * np.array(
-                scales * (dim//2), dtype=np.float32)
-        else:
-            new_bboxes = self.bboxes * scales
-        return type(self)(new_bboxes, self.scores)
+        Returns:
+            Resized Bboxes.
+        '''
+        pass
