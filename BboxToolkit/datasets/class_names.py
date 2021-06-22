@@ -71,13 +71,13 @@ def hrsc_classes():
 
 
 def tinyperson_classes():
-    pass
+    return ['person']
 
 
 dataset_aliases = {
     voc_classes: ['voc', 'pascal_voc', 'voc07', 'voc12'],
     coco_classes: ['coco', 'mscoco', 'ms_coco'],
-    dota1_0_classes: ['DOTA', 'DOTA1_0', 'DOTA1', 'dota', 'dota1_0', 'dota1'],
+    dota1_0_classes: ['DOTA1_0', 'DOTA1', 'dota1_0', 'dota1'],
     dota1_5_classes: ['DOTA1_5', 'DOTA1.5', 'dota1_5', 'dota1.5'],
     dota2_0_classes: ['DOTA2_0', 'DOTA2', 'dota2_0', 'dota2'],
     dior_classes: ['DIOR', 'dior'],
