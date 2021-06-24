@@ -16,7 +16,7 @@ class BaseBbox(metaclass=ABCMeta):
 
         Args:
             start (BaseBbox subclass (e.g., HBB)): functions input Bbox type.
-            end (BbaseBox subclass (e.g., OBB)): functions output Bbox type.
+            end (BbaseBbox subclass (e.g., OBB)): functions output Bbox type.
             force (bool): whether register the shortcuts when a same name
                 shortcut has been registered.
 
@@ -99,8 +99,9 @@ class BaseBbox(metaclass=ABCMeta):
         '''Copy this instance.'''
         pass
 
+    @classmethod
     @abstractmethod
-    def gen_empty(self):
+    def gen_empty(cls):
         '''Create a Bbox instance with len == 0.'''
         pass
 
@@ -110,14 +111,32 @@ class BaseBbox(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def warp(self, M):
+    def rotate(self, x, y, angle, keep_btype=True):
+        '''Rotate the Bboxes.
+
+        Args:
+            x (int | float): x coordinate of rotating center.
+            y (int | float): y coordinate of rotating center.
+            angle (int | float): roatation angle.
+            keep_btype (bool): if True, returned Bboxes type will be
+                same with self, else return POLY. Default:True.
+
+        Returns:
+            Warped POLY
+        '''
+        pass
+
+    @abstractmethod
+    def warp(self, M, keep_btype=False):
         '''Warp the Bboxes.
 
         Args:
             M (ndarray): 2x3 or 3x3 matrix.
+            keep_btype (bool): if True, returned Bboxes type will be
+                same with self, else return POLY. Default:False.
 
         Returns:
-            Warped Bboxes.
+            Warped POLY
         '''
         pass
 

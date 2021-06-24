@@ -1,6 +1,8 @@
 import cv2
 import numpy as np
+
 from .base import BaseBbox
+from .poly import POLY
 
 
 class HBB(BaseBbox):
@@ -15,13 +17,13 @@ class HBB(BaseBbox):
 
     def __repr__(self):
         s = self.__class__.__name__ + '('
+        s += f'len={len(self)}, '
         s += f'bboxes={self.bboxes})'
         return s
 
     def __getitem__(self, index):
         '''see :func:`BaseBbox.__getitem__`'''
-        bboxes = self.bboxes[index]
-        return HBB(bboxes)
+        return HBB(self.bboxes[index])
 
     def __len__(self):
         '''Number of Bboxes.'''
@@ -29,16 +31,9 @@ class HBB(BaseBbox):
 
     def to_poly(self):
         '''Output the Bboxes polygons (list[list[np.ndarry]]).'''
-        polys = []
-        for bbox in self.bboxes:
-            xmin, ymin, xmax, ymax = bbox
-            polys.append([np.array([
-                xmin, ymin,
-                xmax, ymin,
-                xmax, ymax,
-                xmin, ymax], dtype=np.float32)])
-        return polys
-
+        l, t, r, b = np.split(self.bboxes, 4, axis=-1)
+        pts = np.stack([l, t, r, t, r, b, l, b], axis=-1)
+        return [[p] for p in pts]
 
     @classmethod
     def from_poly(cls, polys):
@@ -57,7 +52,8 @@ class HBB(BaseBbox):
         '''Copy this instance.'''
         return HBB(self.bboxes)
 
-    def gen_empty(self):
+    @classmethod
+    def gen_empty(cls):
         '''Create a Bbox instance with len == 0.'''
         bboxes = np.zeros((0, 4), dtype=np.float32)
         return HBB(bboxes)
@@ -68,8 +64,28 @@ class HBB(BaseBbox):
         return (bboxes[..., 2] - bboxes[..., 0]) * \
                 (bboxes[..., 3] - bboxes[..., 1])
 
-    def warp(self, M):
-        '''see :func:`BaseBox.warp`'''
+    def rotate(self, x, y, angle, keep_btype=True):
+        '''see :func:`BaseBbox.rotate`'''
+        # List the points of HBBs.
+        l, t, r, b = np.split(self.bboxes, 4, axis=-1)
+        pts = np.stack([l, t, r, t, r, b, l, b], axis=-1)
+        pts = pts.reshape(-1, 4, 2)
+
+        # Get the roatation matrix and rotate all points
+        M = cv2.getRotationMatrix2D((x, y), angle, 1)
+        rotated_pts = cv2.transform(pts, M)
+
+        # Convert points to Output.
+        if keep_btype:
+            lt_points = rotated_pts.min(axis=1)
+            rb_points = rotated_pts.max(axis=1)
+            return HBB(np.concatenate([lt_points, rb_points], axis=1))
+        else:
+            rotated_pts = rotated_pts.reshape(-1, 8)
+            return POLY([[p] for p in pts])
+
+    def warp(self, M, keep_btype=False):
+        '''see :func:`BaseBbox.warp`'''
         # List the points of HBBs.
         l, t, r, b = np.split(self.bboxes, 4, axis=-1)
         pts = np.stack([l, t, r, t, r, b, l, b], axis=-1)
@@ -79,14 +95,18 @@ class HBB(BaseBbox):
         if M.shape[0] == 2:
             warped_pts = cv2.transform(pts, M)
         elif M.shape[0] == 3:
-            warped_pts = cv2.prospectivetransform(pts, M)
+            warped_pts = cv2.prospectiveTransform(pts, M)
         else:
-            raise ValueError(f'Wrong M shape of {M.shape}')
+            raise ValueError(f'Wrong M shape {M.shape}')
 
-        # Transform points to HBB
-        lt_points = warped_pts.min(axis=1)
-        rb_points = warped_pts.max(axis=1)
-        return HBB(np.concatenate([lt_points, rb_points], axis=-1))
+        # Transform points to Output.
+        if keep_btype:
+            lt_points = warped_pts.min(axis=1)
+            rb_points = warped_pts.max(axis=1)
+            return HBB(np.concatenate([lt_points, rb_points], axis=1))
+        else:
+            warped_pts = warped_pts.reshape(-1, 8)
+            return POLY([[p] for p in warped_pts])
 
     def flip(self, W, H, direction='horizontal'):
         '''see :func:`BaseBbox.flip`'''
