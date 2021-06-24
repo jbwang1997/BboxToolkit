@@ -1,8 +1,10 @@
-# References:
-# https://github.com/shibukawa/imagesize_py
-# https://github.com/jerem/ImageSize
+'''Get image size without reading entire image into Mems.
 
-
+Ackonwledge:
+    This file is modified from imagesize.
+    https://github.com/shibukawa/imagesize_py
+    https://github.com/jerem/ImageSize
+'''
 import re
 import struct
 from xml.etree import ElementTree
@@ -35,11 +37,13 @@ def _convertToPx(value):
 
 
 def imgsize(filepath):
-    """
-    Return (width, height) for a given img file content
-    no requirements
-    :type filepath: Union[str, pathlib.Path]
-    :rtype Tuple[int, int]
+    """Get image size
+
+    Args:
+        filepath (str): path to image.
+
+    Returns:
+        width, height (int, int)
     """
     height = -1
     width = -1

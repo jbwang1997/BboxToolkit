@@ -1,5 +1,12 @@
-# Modified from mmcv.utils.logging
-# Original project: https://github.com/open-mmlab/mmcv
+'''Logging functions
+
+Ackonwlege:
+    This file is modified from mmcv.utils.logging.
+    https://github.com/open-mmlab/mmcv
+
+Add the support of concurrent tasks.
+Delete the support of distribution.
+'''
 import logging
 from cloghandler import ConcurrentRotatingFileHandler
 
@@ -7,6 +14,24 @@ logger_initialized = {}
 
 
 def get_logger(name, log_file=None, log_level=logging.INFO):
+    """Initialize and get a logger by name.
+
+    If the logger has not been initialized, this method will initialize the
+    logger by adding one or two handlers, otherwise the initialized logger will
+    be directly returned. During initialization, a StreamHandler will always be
+    added. If `log_file` is specified, a FileHandler will also be added.
+
+    Args:
+        name (str): Logger name.
+        log_file (str | None): The log filename. If specified, a FileHandler
+            will be added to the logger.
+        log_level (int): The logger level. Note that only the process of
+            rank 0 is affected, and other processes will set the level to
+            "Error" thus be silent most of the time.
+
+    Returns:
+        logging.Logger: The expected logger.
+    """
     logger = logging.getLogger(name)
     if name in logger_initialized:
         return logger
@@ -38,6 +63,18 @@ def get_logger(name, log_file=None, log_level=logging.INFO):
 
 
 def print_log(msg, logger=None, level=logging.INFO):
+    """Print a log message.
+
+    Args:
+        msg (str): The message to be logged.
+        logger (logging.Logger | str | None): The logger to be used.
+            Some special loggers are:
+            - "silent": no message will be printed.
+            - other str: the logger obtained with `get_root_logger(logger)`.
+            - None: The `print()` method will be used to print log messages.
+        level (int): Logging level. Only available when `logger` is a Logger
+            object or "root".
+    """
     if logger is None:
         print(msg)
     elif isinstance(logger, logging.Logger):
