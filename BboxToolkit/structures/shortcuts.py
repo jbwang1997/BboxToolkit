@@ -1,3 +1,8 @@
+'''Direct transformation functions. All functions are registered into
+BaseBbox, so they can be run by function BaseBbox.to_type.
+
+Please refer to BaseBbox.to_type to get details.
+'''
 import cv2
 import numpy as np
 from ..utils import pi
