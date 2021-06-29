@@ -1,41 +1,122 @@
+import cv2
 import numpy as np
-from collections.abc import Iterable
 
-from .base import AlignPOLY
+from .base import BaseBbox
+from .poly import POLY
 
 
-class PT(AlignPOLY):
-    Bdim = 2
+class PT(BaseBbox):
+    '''
+    Points (PT): Treat targets as points. Restore the coordinates of points.
 
-    def __init__(self, bboxes, scores=None):
-        super(AlignPOLY, self).__init__(bboxes, scores)
+    Args:
+        bboxes (ndarray (n, 2)): contain the coordinates of points.
+    '''
+
+    def __init__(self, bboxes):
+        assert isinstance(bboxes, np.ndarray)
+        assert bboxes.ndim == 2 and bboxes.shape[1] == 2
+
+        # Copy and convert ndarray type to float32
+        bboxes = bboxes.astype(np.float32)
+        self.bboxes = bboxes
+
+    def __repr__(self):
+        s = self.__class__.__name__ + '('
+        s += f'len={len(self)}, '
+        s += f'bboxes={self.bboxes})'
+        return s
+
+    def __getitem__(self, index):
+        '''see :func:`BaseBbox.__getitem__`'''
+        return PT(self.bboxes[index])
+
+    def __len__(self):
+        '''Number of Bboxes.'''
+        return self.bboxes.shape[0]
+
+    def to_poly(self):
+        '''Output the Bboxes polygons (list[list[np.ndarry]]).'''
+        return [[p] for p in self.bboxes]
 
     @classmethod
-    def gen_empty(cls, with_scores=False):
+    def from_poly(cls, polys):
+        '''Create a Bbox instance from polygons (list[list[np.ndarray]]).'''
+        if not polys:
+            return cls.gen_empty()
+
+        pts = []
+        for poly in polys:
+            _pts = np.concatenate(poly).reshape(-1, 2)
+            pts.append(_pts.mean(axis=0))
+        return PT(np.stack(pts, axis=0))
+
+    def copy(self):
+        '''Copy this instance.'''
+        return PT(self.bboxes)
+
+    @classmethod
+    def gen_empty(cls):
+        '''Create a Bbox instance with len == 0.'''
         bboxes = np.zeros((0, 2), dtype=np.float32)
-        scores = (None if not with_scores else
-                  np.zeros((0, ), dtype=np.float32))
-        return cls(bboxes, scores)
-
-    @classmethod
-    def gen_random(cls, shape, scale=1, with_scores=False):
-        if isinstance(shape, Iterable):
-            shape = tuple(shape)
-        else:
-            shape = (shape, )
-        shape = shape + (2, )
-
-        pts = scale * np.random.random(shape).astype(np.float32)
-        scores = (None if not with_scores else
-                  np.random.random(shape[:-1]).astype(np.float32))
-        return cls(pts, scores)
-
-    @staticmethod
-    def bbox_from_poly(polys):
-        x = polys[..., 0::2].mean(axis=-1)
-        y = polys[..., 1::2].mean(axis=-1)
-        return np.stack([x,y], axis=-1)
+        return PT(bboxes)
 
     def areas(self):
-        shape = self.bboxes.shape
-        return np.zeros(shape[:-1], dtype=np.float32)
+        '''ndarry: areas of each instance.'''
+        return np.zeros((len(self), ), dtype=np.float32)
+
+    def rotate(self, x, y, angle, keep_btype=True):
+        '''see :func:`BaseBbox.rotate`'''
+        M = cv2.getRotationMatrix2D((x, ), angle, 1)
+        pts = self.bboxes[:, None, :]
+        pts =cv2.transform(pts, M)
+
+        output = PT(pts[:, 0, :])
+        if not keep_btype:
+            output = output.to_type(POLY)
+        return output
+
+    def warp(self, M, keep_btype=False):
+        '''see :func:`BaseBbox.warp`'''
+        pts = self.bboxes[:, None, :]
+        if M.shape[0] == 2:
+            pts = cv2.transform(pts, M)
+        elif M.shape[0] == 3:
+            pts = cv2.prospectiveTransform(pts, M)
+        else:
+            raise ValueError(f'Wrong M shape {M.shape}')
+
+        output = PT(pts[:, 0, :])
+        if not keep_btype:
+            output = output.to_type(POLY)
+        return output
+
+    def flip(self, W, H, direction='horizontal'):
+        '''see :func:`BaseBbox.flip`'''
+        assert direction in ['horizontal', 'vertical', 'diagonal']
+
+        output = self.copy()
+        if direction == 'horizontal':
+            output.bboxes[:, 0] = W - output.bboxes[:, 0]
+        elif direction == 'vertical':
+            output.bboxes[:, 1] = H - output.bboxes[:, 1]
+        else:
+            output.bboxes[:, 0] = W - output.bboxes[:, 0]
+            output.bboxes[:, 1] = H - output.bboxes[:, 1]
+        return output
+
+    def translate(self, x, y):
+        '''see :func:`BaseBbox.translate`'''
+        output = self.copy()
+        output.bboxes += np.asarray([x, y], dtype=np.float32)
+        return output
+
+    def resize(self, ratios):
+        '''see :func:`BaseBbox.resize`'''
+        output = self.copy()
+        if isinstance(ratios, (tuple, list)):
+            assert len(ratios) == 2
+            output.bboxes *= np.asarray(ratios, dtype=np.float32)
+        else:
+            output.bboxes *= ratios
+        return output

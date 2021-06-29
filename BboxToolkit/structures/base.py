@@ -3,8 +3,9 @@ from abc import ABCMeta, abstractmethod
 
 class BaseBbox(metaclass=ABCMeta):
     '''
-    This class is the Base class for all types of Bboxes. In this class,
-    we design the feature of transformation and some abstract functions.
+    Base Bounding Box (BaseBbox): This class is the Base class for all
+    types of Bboxes. In this class, we design some abstract functions
+    which need to be implemented in subclasses.
     '''
 
     # A dictionary contain shortcuts of transformation.
@@ -71,7 +72,7 @@ class BaseBbox(metaclass=ABCMeta):
         '''Index the Bboxes
 
         Args:
-            index (int | ndarray): Indices in the format of interger or ndarray.
+            index (list | ndarray): Indices in the format of interger or ndarray.
 
         Returns:
             type(self): indexed Bboxes.
@@ -85,13 +86,19 @@ class BaseBbox(metaclass=ABCMeta):
 
     @abstractmethod
     def to_poly(self):
-        '''Output the Bboxes polygons (list[list[np.ndarry]]).'''
+        '''Output the Bboxes polygons (list[list[np.ndarry]]). The first level
+        of the list corresponds to objects, the second level to the polys that
+        compose the object, the third level to the poly coordinates.
+        '''
         pass
 
     @classmethod
     @abstractmethod
     def from_poly(cls, polys):
-        '''Create a Bbox instance from polygons (list[list[np.ndarray]]).'''
+        '''Create a Bbox instance from polygons (list[list[np.ndarray]]). The
+        first level of the list corresonds to objects, the second level to the
+        polys that compose the object, the third level to the poly coordinates.
+        '''
         pass
 
     @abstractmethod

@@ -7,26 +7,14 @@ from ..utils.configs import pi
 
 
 class OBB(BaseBbox):
+    '''
+    Oriented Bouding Box (OBB): Implement OBB operations and store OBBs
+    in form of X, Y, W, H, T where X, Y are the center coordinates, W, H
+    are the length of two sides, T is the theta between W side and X axis.
 
-    @staticmethod
-    def _standardize(obbs):
-        '''Present the oriented bboxes as (X, Y, W, H ,Theta) where X, Y are
-           the center coordinates, W is the length of longer side, H is the
-           length of shorter side, Theta is the clockwise angle between x axis
-           and longer size. the Theta is in interval [-pi/2, pi/2).
-
-        Args:
-            obbs (np.ndarray (-1, 5)): Oriented boxes.
-
-        Returns:
-            Standardized oriented bboxes
-        '''
-        ctr, w, h, t = np.split(obbs, (2, 3, 4), axis=-1)
-        reg_w = np.where(w > h, w, h)
-        reg_h = np.where(w > h, h, w)
-        reg_t = np.where(w > h, t, t+pi/2)
-        reg_t = (reg_t + pi/2) % pi - pi/2
-        return np.concatenate([ctr, reg_w, reg_h, reg_t], axis=-1)
+    Args:
+        bboxes (ndarray (n, 5)): oriented bboxes in form (X, Y, W, H, T).
+    '''
 
     def __init__(self, bboxes):
         assert isinstance(bboxes, np.ndarray)
@@ -37,6 +25,25 @@ class OBB(BaseBbox):
         if bboxes.size > 0:
             bboxes = self._standardize(bboxes)
         self.bboxes = bboxes
+
+    @staticmethod
+    def _standardize(obbs):
+        '''Standardize the OBBs, which W is the length of longer side, H
+           is the length of shorter side, T is the clockwise angle between
+           x axis and longer size. the Theta is in interval [-pi/2, pi/2).
+
+        Args:
+            obbs (np.ndarray (-1, 5)): Oriented boxes.
+
+        Returns:
+            Standardized OBBs
+        '''
+        ctr, w, h, t = np.split(obbs, (2, 3, 4), axis=-1)
+        reg_w = np.where(w > h, w, h)
+        reg_h = np.where(w > h, h, w)
+        reg_t = np.where(w > h, t, t+pi/2)
+        reg_t = (reg_t + pi/2) % pi - pi/2
+        return np.concatenate([ctr, reg_w, reg_h, reg_t], axis=-1)
 
     def __repr__(self):
         s = self.__class__.__name__ + '('
@@ -64,13 +71,15 @@ class OBB(BaseBbox):
     @classmethod
     def from_poly(cls, polys):
         '''Create a Bbox instance from polygons (list[list[np.ndarray]]).'''
+        if not polys:
+            return cls.gen_empty()
+
         obbs = []
         for poly in polys:
             pts = np.concatenate(poly).reshape(-1, 2)
             (x, y), (w, h), angle = cv2.minAreaRect(pts)
             obbs.append([x, y, w, h, angle/180*pi])
-
-        return OBB(np.array(obbs))
+        return OBB(np.asarray(obbs))
 
     def copy(self):
         '''Copy this instance.'''
@@ -156,7 +165,7 @@ class OBB(BaseBbox):
     def translate(self, x, y):
         '''see :func:`BaseBbox.translate`'''
         bboxes = self.bboxes.copy()
-        bboxes[..., :2] += np.array((x, y), dtype=np.float32)
+        bboxes[..., :2] += np.asarray((x, y), dtype=np.float32)
         return OBB(bboxes)
 
     def resize(self, ratios):
@@ -164,7 +173,7 @@ class OBB(BaseBbox):
         bboxes = self.bboxes.copy()
         if isinstance(ratios, (tuple, list)):
             assert len(ratios) == 2
-            bboxes[..., :4] *= np.array(ratios*2, dtype=np.float32)
+            bboxes[..., :4] *= np.asarray(ratios*2, dtype=np.float32)
         else:
             bboxes[..., :4] *= ratios
         return OBB(bboxes)

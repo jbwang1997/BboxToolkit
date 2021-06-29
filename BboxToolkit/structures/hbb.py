@@ -6,12 +6,20 @@ from .poly import POLY
 
 
 class HBB(BaseBbox):
+    '''
+    Horizontal Bounding Box (HBB): Present horizontal boudning boxes
+    by their left top points and right bottom points.
+
+    Args:
+        bboxes (ndarray (n, 4)): contain the left top and right bottom
+            point coordinates.
+    '''
 
     def __init__(self, bboxes):
         assert isinstance(bboxes, np.ndarray)
         assert bboxes.ndim == 2 and bboxes.shape[1] == 4
 
-        # Copy and convert np.ndarray type of float32.
+        # Copy and convert ndarray type of float32.
         bboxes = bboxes.astype(np.float32)
         self.bboxes = bboxes
 
@@ -38,15 +46,16 @@ class HBB(BaseBbox):
     @classmethod
     def from_poly(cls, polys):
         '''Create a Bbox instance from polygons (list[list[np.ndarray]]).'''
+        if not polys:
+            return cls.gen_empty()
+
         hbbs = []
         for poly in polys:
             pts = np.concatenate(poly).reshape(-1, 2)
             lt_points = pts.min(axis=0)
             rb_points = pts.max(axis=0)
             hbbs.append(np.concatenate([lt_points, rb_points]))
-
-        hbbs = np.stack(hbbs, axis=0)
-        return HBB(hbbs)
+        return HBB(np.stack(hbbs, axis=0))
 
     def copy(self):
         '''Copy this instance.'''
@@ -82,7 +91,7 @@ class HBB(BaseBbox):
             return HBB(np.concatenate([lt_points, rb_points], axis=1))
         else:
             rotated_pts = rotated_pts.reshape(-1, 8)
-            return POLY([[p] for p in pts])
+            return POLY([[p] for p in rotated_pts])
 
     def warp(self, M, keep_btype=False):
         '''see :func:`BaseBbox.warp`'''
@@ -91,7 +100,7 @@ class HBB(BaseBbox):
         pts = np.stack([l, t, r, t, r, b, l, b], axis=-1)
         pts = pts.reshape(-1, 4, 2)
 
-        # Warp points
+        # Warp points.
         if M.shape[0] == 2:
             warped_pts = cv2.transform(pts, M)
         elif M.shape[0] == 3:
@@ -115,29 +124,29 @@ class HBB(BaseBbox):
 
         flipped = bboxes.copy()
         if direction == 'horizontal':
-            flipped[..., 0::4] = W - bboxes[..., 2::4]
-            flipped[..., 2::4] = W - bboxes[..., 0::4]
+            flipped[:, 0] = W - bboxes[:, 2]
+            flipped[:, 2] = W - bboxes[:, 0]
         elif direction == 'vertical':
-            flipped[..., 1::4] = H - bboxes[..., 3::4]
-            flipped[..., 3::4] = H - bboxes[..., 1::4]
+            flipped[:, 1] = H - bboxes[:, 3]
+            flipped[:, 3] = H - bboxes[:, 1]
         else:
-            flipped[..., 0::4] = W - bboxes[..., 2::4]
-            flipped[..., 1::4] = H - bboxes[..., 3::4]
-            flipped[..., 2::4] = W - bboxes[..., 0::4]
-            flipped[..., 3::4] = H - bboxes[..., 1::4]
+            flipped[:, 0] = W - bboxes[:, 2]
+            flipped[:, 1] = H - bboxes[:, 3]
+            flipped[:, 2] = W - bboxes[:, 0]
+            flipped[:, 3] = H - bboxes[:, 1]
 
         return HBB(flipped)
 
     def translate(self, x, y):
         '''see :func:`BaseBbox.translate`'''
-        bboxes = self.bboxes + np.array([x, y, x, y], dtype=np.float32)
+        bboxes = self.bboxes + np.asarray([x, y, x, y], dtype=np.float32)
         return HBB(bboxes)
 
     def resize(self, ratios):
         '''see :func:`BaseBbox.resize`'''
         if isinstance(ratios, (tuple, list)):
             assert len(ratios) == 2
-            bboxes = self.bboxes * np.array(ratios * 2, dtype=np.float32)
+            bboxes = self.bboxes * np.asarray(ratios * 2, dtype=np.float32)
         else:
             bboxes = self.bboxes * ratios
         return HBB(bboxes)
