@@ -1,82 +1,102 @@
-import os
+'''Base functions for loading and dumping datasets.'''
 import time
-import pickle
-import os.path as osp
-import BboxToolkit.datasets as datasets
-
-from tqdm import tqdm
-from .misc import read_imgset, read_imgdir
-from ..utils import print_log, imgsize
 
 
-def load_dataset(load_type, **kwargs):
-    assert load_type != 'dataset'
-    logger = kwargs.get('logger', None)
-    print_log(f'Start loading {load_type} dataset.', logger)
-    for k, v in kwargs.items():
-        if k == 'logger':
-            continue
-        print_log(f'{k}: {v}', logger)
+# Dictionarys store loading and dumping functions
+LOADING_FUNC = {}
+DUMPING_FUNC = {}
+
+def register_io_func(load_or_dump, dataset_type, force=False):
+    '''Register loading or dumping functions of a dataset.
+
+    Args:
+         load_or_dump (str): 'load' or 'dump'.
+         dataset_type (str): dataset name (e.g. voc, coco).
+         force (bool): forcely register functions when a function with
+            same key has been register.
+
+    Returns:
+        decorator.
+    '''
+    assert load_or_dump in ['load', 'dump']
+    func_dict = LOADING_FUNC if load_or_dump == 'load' \
+            else DUMPING_FUNC
+
+    dataset_type = dataset_type.lower()
+    if (not force) and (dataset_type in func_dict):
+        raise KeyError(f'{load_or_dump.catitalize()}ing function of ',
+                       f'{dataset_type} is already registered!')
+
+    def _decorator(func):
+        func_dict[dataset_type] = func
+    return _decorator
+
+
+def load_dataset(dataset_type, loading_args):
+    '''Select loading function of dataset_type and load dataset.
+
+    Args:
+        dataset_type (str): dataset name used to select loading functions.
+        loading_args (dict): arguments of dataset_type loading functions.
+        logger (logger): logger object.
+
+    Return:
+        output format:
+        [
+            {
+                'filename': 'a.jpg',
+                'width': 1024,
+                'height': 2014,
+                ... (image level informations),
+                'ann': {
+                    'bboxes': <obj:BaseBbox>,
+                    'classes': <list[str]>,
+                    ... (instance level informations)
+                }
+            },
+            ...
+        ]
+    '''
+    if dataset_type not in LOADING_FUNC:
+        raise KeyError(f'No loading function of {dataset_type}')
+    loading_func = LOADING_FUNC[dataset_type.lower()]
+
+    print(f'Start loading {dataset_type}.')
+    for k, v in loading_args.items():
+        print(f'{k}: {v}')
 
     start_time = time.time()
-    load_func = getattr(datasets, 'load_'+load_type)
-    data = load_func(**kwargs)
+    data = loading_func(**loading_args)
     end_time = time.time()
 
-    print_log(f'Finish loading {load_type} dataset.', logger)
-    print_log(f'Time consuming: {end_time - start_time:.3f}s.', logger)
-    print_log(f'Data number: {len(data)}', logger)
+    print(f'Finish loading {dataset_type}.')
+    print(f'Time consuming: {end_time - start_time:.3f}s.')
+    print(f'Data number: {len(data)}')
     return data
 
 
-def load_imgs(img_dir, img_set=None, **kwargs):
-    id2img = read_imgdir(img_dir)
-    imgset = list(id2img) if img_set is None \
-            else read_imgset(img_set)
+def dump_dataset(dataset_type, dumping_dict):
+    '''Select loading function of dataset_type and load dataset.
 
-    data = []
-    for img_id in tqdm(imgset):
-        assert img_id in id2img, f'Cannot find{img_id} in {img_dir}'
-        imgfile = id2img[img_id]
-        width, height = imgsize(osp.join(img_dir, imgfile))
-        data.append(dict(
-            width=width, height=height, filename=imgfile, ann=dict()))
-    return data
+    Args:
+        dataset_type (str): dataset name used to select dumping functions.
+        loading_args (dict): arguments of dataset_type dumping functions.
+        logger (logger): logger object.
 
+    Return:
+        None
+    '''
+    if dataset_type not in DUMPING_FUNC:
+        raise KeyError(f'No dumping function of {dataset_type}')
+    dumping_func = DUMPING_FUNC[dataset_type.lower()]
 
-def load_pkl(ann_dir, img_set=None, **kwargs):
-    with open(ann_dir, 'rb') as f:
-        data = pickle.load(f)
-
-    if img_set is not None:
-        data = split_imgset(data, img_set)
-    return data, classes
-
-
-def dump_dataset(dump_type, **kwargs):
-    assert dump_type != 'dataset'
-    logger = kwargs.get('logger', None)
-    print_log(f'Start dumping {dump_type} dataset.', logger)
-    for k, v in kwargs.items():
-        if k == 'logger':
-            continue
-        print_log(f'{k}: {v}', logger)
+    print(f'Start dumping data into {dataset_type} format.')
+    for k, v in dumping_dict.items():
+        print(f'{k}: {v}')
 
     start_time = time.time()
-    dump_func = getattr(datasets, 'dump_'+dump_type)
-    dump_func(**kwargs)
+    dumping_func(**dumping_dict)
     end_time = time.time()
 
-    print_log(f'Finish dumping data as {dump_type} dataset.')
-    print_log(f'Time consuming: {end_time - start_time:.3f}s.', logger)
-
-
-def dump_pkl(ann_dir, data, classes, **kwargs):
-    assert ann_dir.endswith('.pkl')
-    filepath = osp.split(ann_dir)[0]
-    if not osp.exists(filepath):
-        os.makedirs(filepath)
-
-    data = dict(classes=classes, data=data)
-    with open(ann_dir, 'wb') as f:
-        pickle.dump(data, f)
+    print(f'Finish dumping data into {dataset_type} format.')
+    print(f'Time consuming: {end_time - start_time:.3f}s.')
