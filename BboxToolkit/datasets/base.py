@@ -1,10 +1,8 @@
-'''Base functions for loading and dumping datasets.'''
 import time
 
 
-# Dictionarys store loading and dumping functions
-LOADING_FUNC = {}
-DUMPING_FUNC = {}
+LOADING_FUNC = {} # Store loading functions of datasets
+DUMPING_FUNC = {} # Store dumping functions of datasets
 
 def register_io_func(load_or_dump, dataset_type, force=False):
     '''Register loading or dumping functions of a dataset.
@@ -50,7 +48,7 @@ def load_dataset(dataset_type, loading_args):
                 ... (image level informations),
                 'ann': {
                     'bboxes': <obj:BaseBbox>,
-                    'classes': <list[str]>,
+                    'categories': <list[str]>,
                     ... (instance level informations)
                 }
             },
