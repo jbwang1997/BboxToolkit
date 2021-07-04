@@ -74,6 +74,7 @@ def tinyperson_classes():
     return ['person']
 
 
+# the aliases of dataset.
 dataset_aliases = {
     voc_classes: ['voc', 'pascal_voc', 'voc07', 'voc12'],
     coco_classes: ['coco', 'mscoco', 'ms_coco'],
@@ -87,6 +88,14 @@ dataset_aliases = {
 
 
 def get_classes(alias_or_list):
+    '''Input dataset alias or class name file, Reture class names.
+
+    Args:
+        alias_or_list (iterable|str): if alias_or_list is iterable,
+            the function will returen itself. Else if alias_or_list
+            is str, the funciton will first try to read it as a file,
+            then treats alias_or_list as a alias of datasets.
+    '''
     if isinstance(alias_or_list, (list, tuple)):
         for name in alias_or_list:
             assert isinstance(name, str)
