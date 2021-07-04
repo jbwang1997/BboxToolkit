@@ -81,6 +81,15 @@ class OBB(BaseBbox):
             obbs.append([x, y, w, h, angle/180*pi])
         return OBB(np.asarray(obbs))
 
+    @classmethod
+    def concatenate(cls, bboxes):
+        '''Concatenate list of bboxes.'''
+        bboxes = []
+        for b in bboxes:
+            assert isinstance(b, OBB)
+            bboxes.append(b.bboxes)
+        return OBB(np.concatenate(bboxes, axis=0))
+
     def copy(self):
         '''Copy this instance.'''
         obbs = OBB.gen_empty()

@@ -47,7 +47,7 @@ class HBB(BaseBbox):
     def from_poly(cls, polys):
         '''Create a Bbox instance from polygons (list[list[np.ndarray]]).'''
         if not polys:
-            return cls.gen_empty()
+            return HBB.gen_empty()
 
         hbbs = []
         for poly in polys:
@@ -56,6 +56,15 @@ class HBB(BaseBbox):
             rb_points = pts.max(axis=0)
             hbbs.append(np.concatenate([lt_points, rb_points]))
         return HBB(np.stack(hbbs, axis=0))
+
+    @classmethod
+    def concatenate(cls, bboxes):
+        '''Concatenate list of bboxes.'''
+        bboxes = []
+        for b in bboxes:
+            assert isinstance(b, HBB)
+            bboxes.append(b.bboxes)
+        return HBB(np.concatenate(bboxes, axis=0))
 
     def copy(self):
         '''Copy this instance.'''

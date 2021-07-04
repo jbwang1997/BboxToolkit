@@ -55,6 +55,15 @@ class P4POLY(BaseBbox):
                 p4polys.append(pts.reshape(-1))
         return P4POLY(np.stack(p4polys, axis=0))
 
+    @classmethod
+    def concatenate(cls, bboxes):
+        '''Concatenate list of bboxes.'''
+        bboxes = []
+        for b in bboxes:
+            assert isinstance(b, P4POLY)
+            bboxes.append(b.bboxes)
+        return P4POLY(np.concatenate(bboxes, axis=0))
+
     def copy(self):
         '''Copy this instance.'''
         return P4POLY(self.bboxes)

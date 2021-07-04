@@ -98,6 +98,23 @@ class POLY(BaseBbox):
         '''Create a Bbox instance from polygons (list[list[np.ndarray]]).'''
         return POLY(polys)
 
+    @classmethod
+    def concatenate(cls, bboxes):
+        '''Concatenate list of bboxes.'''
+        pts, regs, objs = [], [], []
+        start_len = 0
+        for b in bboxes:
+            pts.append(b.pts)
+            regs.append(b.regs)
+            objs.append(b.objs+start_len)
+            start_len += len(b)
+
+        polys = POLY.gen_empty()
+        polys.pts = np.concatenate(pts)
+        polys.regs = np.concatenate(regs)
+        polys.objs = np.concatenate(objs)
+        return polys
+
     def copy(self):
         '''Copy this instance.'''
         polys = POLY([])

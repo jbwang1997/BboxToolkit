@@ -51,6 +51,15 @@ class PT(BaseBbox):
             pts.append(_pts.mean(axis=0))
         return PT(np.stack(pts, axis=0))
 
+    @classmethod
+    def concatenate(cls, bboxes):
+        '''Concatenate list of bboxes.'''
+        bboxes = []
+        for b in bboxes:
+            assert isinstance(b, PT)
+            bboxes.append(b.bboxes)
+        return PT(np.concatenate(bboxes, axis=0))
+
     def copy(self):
         '''Copy this instance.'''
         return PT(self.bboxes)

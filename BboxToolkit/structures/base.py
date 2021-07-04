@@ -8,7 +8,7 @@ class BaseBbox(metaclass=ABCMeta):
     which need to be implemented in subclasses.
     '''
 
-    # A dictionary contain shortcuts of transformation.
+    # A dictionary stores shortcuts of transformation.
     TRAN_SHORTCUTS = dict()
 
     @classmethod
@@ -99,6 +99,12 @@ class BaseBbox(metaclass=ABCMeta):
         first level of the list corresonds to objects, the second level to the
         polys that compose the object, the third level to the poly coordinates.
         '''
+        pass
+
+    @classmethod
+    @abstractmethod
+    def concatenate(cls, bboxes):
+        '''Concatenate list of bboxes.'''
         pass
 
     @abstractmethod
