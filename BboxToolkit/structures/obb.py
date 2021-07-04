@@ -3,7 +3,7 @@ import numpy as np
 
 from .base import BaseBbox
 from .poly import POLY
-from ..utils.configs import pi
+from ..utils.defaults import pi
 
 
 class OBB(BaseBbox):

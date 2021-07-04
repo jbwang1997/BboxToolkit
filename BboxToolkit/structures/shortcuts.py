@@ -5,7 +5,7 @@ Please refer to BaseBbox.to_type to get details.
 '''
 import cv2
 import numpy as np
-from ..utils import pi
+from ..utils.defaults import pi
 
 # Import Bbox type
 from .base import BaseBbox
