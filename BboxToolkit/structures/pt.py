@@ -5,6 +5,7 @@ from .base import BaseBbox
 from .poly import POLY
 
 
+@BaseBbox.register_bbox_cls()
 class PT(BaseBbox):
     '''
     Points (PT): Treat targets as points. Restore the coordinates of points.

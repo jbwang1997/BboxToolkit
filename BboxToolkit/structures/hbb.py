@@ -5,6 +5,7 @@ from .base import BaseBbox
 from .poly import POLY
 
 
+@BaseBbox.register_bbox_cls()
 class HBB(BaseBbox):
     '''
     Horizontal Bounding Box (HBB): Present horizontal boudning boxes

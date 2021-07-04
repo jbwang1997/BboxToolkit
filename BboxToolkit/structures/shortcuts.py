@@ -18,8 +18,8 @@ from .pt import PT
 
 #--------------------------HBB----------------------------
 #-------------Start from HBB, End to others.--------------
-@BaseBbox.register_shortcuts(HBB, OBB)
-def HBB2OBB(hbbs):
+@BaseBbox.register_shortcuts('hbb', 'obb')
+def hbb_2_obb(hbbs):
     hbbs = hbbs.bboxes
     x = (hbbs[:, 0] + hbbs[:, 2]) * 0.5
     y = (hbbs[:, 1] + hbbs[:, 3]) * 0.5
@@ -29,14 +29,14 @@ def HBB2OBB(hbbs):
     return OBB(np.stack([x, y, w, h, t], axis=1))
 
 
-@BaseBbox.register_shortcuts(HBB, P4POLY)
-def HBB2P4POLY(hbbs):
+@BaseBbox.register_shortcuts('hbb', 'p4poly')
+def hbb_2_p4poly(hbbs):
     l, t, r, b = np.split(hbbs.bboxes, 4, axis=1)
     return P4POLY(np.stack([l, t, r, t, r, b, l, b], axis=1))
 
 
-@BaseBbox.register_shortcuts(HBB, POLY)
-def HBB2POLY(hbbs):
+@BaseBbox.register_shortcuts('hbb', 'poly')
+def hbb_2_poly(hbbs):
     hbbs = hbbs.bboxes
     l, t, r, b = np.split(hbbs, 4, axis=1)
     p4polys = np.stack([l, t, r, t, r, b, l, b], axis=1)
@@ -49,16 +49,16 @@ def HBB2POLY(hbbs):
     return polys
 
 
-@BaseBbox.register_shortcuts(HBB, PT)
-def HBB2PT(hbbs):
+@BaseBbox.register_shortcuts('hbb', 'pt')
+def hbb_2_pt(hbbs):
     hbbs = hbbs.bboxes
     return PT(hbbs[:, 2:] - hbbs[:, :2])
 
 
 #--------------------------OBB----------------------------
 #-------------Start from OBB, End to others.--------------
-@BaseBbox.register_shortcuts(OBB, HBB)
-def OBB2HBB(obbs):
+@BaseBbox.register_shortcuts('obb', 'hbb')
+def obb_2_hbb(obbs):
     ctr, w, h, theta = np.split(obbs.bboxes, (2, 3, 4), axis=-1)
     Cos, Sin = np.cos(theta), np.sin(theta)
     x_bias = np.abs(w/2 * Cos) + np.abs(h/2 * Sin)
@@ -67,8 +67,8 @@ def OBB2HBB(obbs):
     return HBB(np.concatenate([ctr-bias, ctr+bias], axis=1))
 
 
-@BaseBbox.register_shortcuts(OBB, P4POLY)
-def OBB2P4POLY(obbs):
+@BaseBbox.register_shortcuts('obb', 'p4poly')
+def obb_2_p4poly(obbs):
     ctr, w, h, theta = np.split(obbs.bboxes, (2, 3, 4), axis=-1)
     Cos, Sin = np.cos(theta), np.sin(theta)
 
@@ -84,8 +84,8 @@ def OBB2P4POLY(obbs):
     return P4POLY(np.concatenate([pt1, pt2, pt3, pt4], axis=-1))
 
 
-@BaseBbox.register_shortcuts(OBB, POLY)
-def OBB2POLY(obbs):
+@BaseBbox.register_shortcuts('obb', 'poly')
+def obb_2_poly(obbs):
     ctr, w, h, theta = np.split(obbs.bboxes, (2, 3, 4), axis=-1)
     Cos, Sin = np.cos(theta), np.sin(theta)
 
@@ -106,15 +106,15 @@ def OBB2POLY(obbs):
     return polys
 
 
-@BaseBbox.register_shortcuts(OBB, PT)
-def OBB2PT(obbs):
+@BaseBbox.register_shortcuts('obb', 'pt')
+def obb_2_pt(obbs):
     return PT(obbs.bboxes[:, :2])
 
 
 #------------------------P4POLY---------------------------
 #------------Start from P4POLY, End to others.------------
-@BaseBbox.register_shortcuts(P4POLY, HBB)
-def P4POLY2HBB(p4polys):
+@BaseBbox.register_shortcuts('p4poly', 'hbb')
+def p4poly_2_hbb(p4polys):
     p4polys = p4polys.bboxes
     p4polys = p4polys.reshape(-1, 4, 2)
     lt_points = np.min(p4polys, axis=1)
@@ -122,8 +122,8 @@ def P4POLY2HBB(p4polys):
     return HBB(np.concatenate([lt_points, rb_points], axis=1))
 
 
-@BaseBbox.register_shortcuts(P4POLY, OBB)
-def P4POLY2OBB(p4polys):
+@BaseBbox.register_shortcuts('p4poly', 'obb')
+def p4poly_2_obb(p4polys):
     p4polys = p4polys.bboxes.reshape(-1, 4, 2)
     obboxes = []
     for poly in p4polys:
@@ -132,8 +132,8 @@ def P4POLY2OBB(p4polys):
     return OBB(np.asarray(obboxes, dtype=np.float32))
 
 
-@BaseBbox.register_shortcuts(P4POLY, POLY)
-def P4POLY2POLY(p4polys):
+@BaseBbox.register_shortcuts('p4poly', 'poly')
+def p4poly_2_poly(p4polys):
     polys = POLY.gen_empty()
     polys.pts = p4polys.bboxes.reshape(-1, 2)
     polys.regs = np.zeros((polys.pts.shape[0], ), dtype=np.int64)
@@ -141,16 +141,16 @@ def P4POLY2POLY(p4polys):
     return polys
 
 
-@BaseBbox.register_shortcuts(P4POLY, PT)
-def P4POLY2PT(p4polys):
+@BaseBbox.register_shortcuts('p4poly', 'pt')
+def p4poly_2_pt(p4polys):
     p4polys.p4polys.bboxes.reshape(-1, 4, 2)
     return PT(p4polys.mean(axis=1))
 
 
 #-------------------------POLY----------------------------
 #-------------Start from POLY, End to others.-------------
-@BaseBbox.register_shortcuts(POLY, HBB)
-def POLY2HBB(polys):
+@BaseBbox.register_shortcuts('poly', 'hbb')
+def poly_2_hbb(polys):
     if len(polys) == 0:
         return HBB.gen_empty()
     
@@ -166,8 +166,8 @@ def POLY2HBB(polys):
     return HBB(np.stack(hbbs, axis=0))
 
 
-@BaseBbox.register_shortcuts(POLY, OBB)
-def POLY2OBB(polys):
+@BaseBbox.register_shortcuts('poly', 'obb')
+def poly_2_obb(polys):
     if len(polys) == 0:
         return OBB.gen_empty()
 
@@ -181,8 +181,8 @@ def POLY2OBB(polys):
     return OBB(np.asarray(obbs))
 
 
-@BaseBbox.register_shortcuts(POLY, P4POLY)
-def POLY2P4POLY(polys):
+@BaseBbox.register_shortcuts('poly', 'p4poly')
+def poly2p4poly(polys):
     if len(polys) == 0:
         return OBB.gen_empty()
 
@@ -201,8 +201,8 @@ def POLY2P4POLY(polys):
     return P4POLY(p4poly.reshape(-1, 8))
 
 
-@BaseBbox.register_shortcuts(POLY, PT)
-def POLY2PT(polys):
+@BaseBbox.register_shortcuts('poly', 'pt')
+def poly_2_pt(polys):
     if len(polys) == 0:
         return PT.gen_empty()
 
@@ -217,28 +217,28 @@ def POLY2PT(polys):
 
 #--------------------------PT-----------------------------
 #--------------Start from PT, End to others.--------------
-@BaseBbox.register_shortcuts(PT, HBB)
-def PT2HBB(pts):
+@BaseBbox.register_shortcuts('pt', 'hbb')
+def pt_2_hbb(pts):
     pts = pts.bboxes
     return HBB(np.concatenate([pts, pts], axis=1))
 
 
-@BaseBbox.register_shortcuts(PT, OBB)
-def PT2OBB(pts):
+@BaseBbox.register_shortcuts('pt', 'obb')
+def pt_2_obb(pts):
     pts = pts.bboxes
     wht = np.zeros((pts.shape[0], 3), dtype=np.float32)
     obbs = np.concatenate([pts, wht], axis=1)
     return OBB(obbs)
 
 
-@BaseBbox.register_shortcuts(PT, P4POLY)
-def PT2P4POLY(pts):
+@BaseBbox.register_shortcuts('pt', 'p4poly')
+def pt_2_p4poly(pts):
     pts = pts.bboxes
     return P4POLY(pts.tile(pts, 4, axis=1))
 
 
-@BaseBbox.register_shortcuts(PT, POLY)
-def PT2POLY(pts):
+@BaseBbox.register_shortcuts('pt', 'poly')
+def pt_2_poly(pts):
     polys = POLY.gen_empty()
     polys.pts = pts.bboxes
     polys.regs = np.zeros((len(pts), ), dtype=np.int64)

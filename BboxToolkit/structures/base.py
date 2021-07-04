@@ -1,3 +1,4 @@
+import inspect
 from abc import ABCMeta, abstractmethod
 
 
@@ -8,30 +9,55 @@ class BaseBbox(metaclass=ABCMeta):
     which need to be implemented in subclasses.
     '''
 
-    # A dictionary stores shortcuts of transformation.
-    TRAN_SHORTCUTS = dict()
+    BBOX_CLASSES = dict() # Store Bbox classes
+    TRAN_SHORTCUTS = dict() # Store transformation shortcut
+
+    @classmethod
+    def register_bbox_cls(cls, force=False):
+        '''Register BaseBbox subclass.
+
+        Args:
+            force (bool): whether register the subclass when a same name class
+            has been registered.
+
+        Returns:
+            Registrar.
+        '''
+
+        def  _decorator(sub_cls):
+            assert issubclass(sub_cls, BaseBbox)
+            cls_name = sub_cls.__name__.lower()
+
+            if (not force) and (cls_name in cls.BBOX_CLASSES):
+                raise KeyError(f'The {cls_name} class is already registered.')
+
+            cls.BBOX_CLASSES[cls_name] = sub_cls
+            return sub_cls
+        return _decorator
 
     @classmethod
     def register_shortcuts(cls, start, end, force=False):
         '''Register functions as shortucts of transformation.
 
         Args:
-            start (BaseBbox subclass (e.g., HBB)): functions input Bbox type.
-            end (BbaseBbox subclass (e.g., OBB)): functions output Bbox type.
+            start (str (e.g., 'hbb')): function's input Bbox type name.
+            end (str (e.g., 'obb')): function's output Bbox type name. Must
+                different with 'start'.
             force (bool): whether register the shortcuts when a same name
                 shortcut has been registered.
 
         Returns:
             Registrar.
         '''
-        assert isinstance(start, BaseBbox)
-        assert isinstance(end, BaseBbox)
-        assert start is not end, 'The types of start and end are same.'
-        key = start.__name__ + '2' + end.__name__
+        start, end = start.lower(), end.lower()
+        assert start != end, 'The types of start and end are same.'
+        assert start in cls.BBOX_CLASSES
+        assert end in cls.BBOX_CLASSES
+        key = start + '_2_' + end
 
         # To judge if the shortcuts has been registered.
         if (not force) and (key in cls.TRAN_SHORTCUTS):
-            raise KeyError(f'The shortcut {key} is already registered.')
+            raise KeyError(f'The {key} shortcut is already registered.')
 
         def _decorator(func):
             cls.TRAN_SHORTCUTS[key] = func
@@ -44,24 +70,27 @@ class BaseBbox(metaclass=ABCMeta):
            convert Bboxes using to_poly and run from_poly.
 
         Args:
-            new_type (BboxToolkit.strutures): the target type of Bboxes.
+            new_type (str (e.g., 'hbb')): the target type name of Bboxes.
 
         Returns:
             new_type: transformed Bboxes.
         '''
-        assert isinstance(new_type, BaseBbox)
+        new_type = new_type.lower()
+        assert new_type in self.BBOX_CLASSES
+        new_cls = self.BBOX_CLASSES[new_type]
 
         # Target type is same with now type, just output a copy of self.
-        if isinstance(self, new_type):
+        if isinstance(self, new_cls):
             return self.copy()
 
         # The shortcut has been registered, use shortcut to transform Bboxes.
-        key = type(self).__name__ + '2' + new_type.__name__
+        start_type = self.__class__.__name__.lower()
+        key = start_type + '_2_' + new_type
         if key in self.TRAN_SHORTCUTS:
             return self.TRAN_SHORTCUTS[key](self)
 
         polys = self.to_poly()
-        return new_type.from_poly(polys)
+        return new_cls.from_poly(polys)
 
     def __iter__(self):
         '''Iterate all Bboxes in polygon form.'''

@@ -4,6 +4,7 @@ from .base import BaseBbox
 from .poly import POLY
 
 
+@BaseBbox.register_bbox_cls()
 class MixedBbox(BaseBbox):
     '''
     Mixed Bboxes (MixedBbox): Mix different types of bboxes into one type.

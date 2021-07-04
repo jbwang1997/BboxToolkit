@@ -6,6 +6,7 @@ from .poly import POLY
 from ..utils.defaults import pi
 
 
+@BaseBbox.register_bbox_cls()
 class OBB(BaseBbox):
     '''
     Oriented Bouding Box (OBB): Implement OBB operations and store OBBs

@@ -5,6 +5,7 @@ from .base import BaseBbox
 from .poly import POLY
 
 
+@BaseBbox.register_bbox_cls()
 class P4POLY(BaseBbox):
     '''
     4 Point Polygon (P4POLY): present a bbox with coordinates of 4 points.

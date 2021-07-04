@@ -3,6 +3,7 @@ import numpy as np
 from .base import BaseBbox
 
 
+@BaseBbox.register_bbox_cls()
 class POLY(BaseBbox):
     '''
     Polygons (POLY): Interpret and store the polygon of bboxes in points,
