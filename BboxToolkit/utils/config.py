@@ -1,4 +1,5 @@
 # Copyright (c) Open-MMLab. All rights reserved.
+# Copy from mmcv-full 1.3.8
 import ast
 import copy
 import os
