@@ -78,8 +78,8 @@ class P4POLY(BaseBbox):
     def areas(self):
         '''ndarry: areas of each instance.'''
         pts = self.bboxes.reshape(-1, 4, 2)
-        part1 = pts[:, :, 0] * np.roll(pts[:, :, 1], 1)
-        part2 = pts[:, :, 1] * np.roll(pts[:, :, 0], 1)
+        part1 = pts[:, :, 0] * np.roll(pts[:, :, 1], 1, axis=1)
+        part2 = pts[:, :, 1] * np.roll(pts[:, :, 0], 1, axis=1)
         areas = 0.5 * np.abs(part1.sum(axis=1) - part2.sum(axis=1))
         return areas
 
