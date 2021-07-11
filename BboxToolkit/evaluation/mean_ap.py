@@ -2,8 +2,6 @@ import numpy as np
 from multiprocessing import Pool
 from terminaltables import AsciiTable
 
-from .misc import get_classes
-from ..geometry import bbox_overlaps, bbox_areas
 
 
 def average_precision(recalls, precisions, mode='area'):
@@ -44,13 +42,107 @@ def average_precision(recalls, precisions, mode='area'):
                 precs = precisions[i, recalls[i, :] >= thr]
                 prec = precs.max() if precs.size > 0 else 0
                 ap[i] += prec
-            ap /= 11
+        ap /= 11
     else:
         raise ValueError(
             'Unrecognized mode, only "area" and "11points" are supported')
     if no_scale:
         ap = ap[0]
     return ap
+
+
+def tpfp_imagenet(det_bboxes,
+                  gt_bboxes,
+                  gt_bboxes_ignore=None,
+                  default_iou_thr=0.5,
+                  area_ranges=None):
+    """Check if detected bboxes are true positive or false positive.
+
+    Args:
+        det_bbox (ndarray): Detected bboxes of this image, of shape (m, 5).
+        gt_bboxes (ndarray): GT bboxes of this image, of shape (n, 4).
+        gt_bboxes_ignore (ndarray): Ignored gt bboxes of this image,
+            of shape (k, 4). Default: None
+        default_iou_thr (float): IoU threshold to be considered as matched for
+            medium and large bboxes (small ones have special rules).
+            Default: 0.5.
+        area_ranges (list[tuple] | None): Range of bbox areas to be evaluated,
+            in the format [(min1, max1), (min2, max2), ...]. Default: None.
+
+    Returns:
+        tuple[np.ndarray]: (tp, fp) whose elements are 0 and 1. The shape of
+            each array is (num_scales, m).
+    """
+    # an indicator of ignored gts
+    gt_ignore_inds = np.concatenate(
+        (np.zeros(gt_bboxes.shape[0], dtype=np.bool),
+         np.ones(gt_bboxes_ignore.shape[0], dtype=np.bool)))
+    # stack gt_bboxes and gt_bboxes_ignore for convenience
+    gt_bboxes = np.vstack((gt_bboxes, gt_bboxes_ignore))
+
+    num_dets = det_bboxes.shape[0]
+    num_gts = gt_bboxes.shape[0]
+    if area_ranges is None:
+        area_ranges = [(None, None)]
+    num_scales = len(area_ranges)
+    # tp and fp are of shape (num_scales, num_gts), each row is tp or fp
+    # of a certain scale.
+    tp = np.zeros((num_scales, num_dets), dtype=np.float32)
+    fp = np.zeros((num_scales, num_dets), dtype=np.float32)
+    if gt_bboxes.shape[0] == 0:
+        if area_ranges == [(None, None)]:
+            fp[...] = 1
+        else:
+            det_areas = (det_bboxes[:, 2] - det_bboxes[:, 0]) * (
+                det_bboxes[:, 3] - det_bboxes[:, 1])
+            for i, (min_area, max_area) in enumerate(area_ranges):
+                fp[i, (det_areas >= min_area) & (det_areas < max_area)] = 1
+        return tp, fp
+    ious = bbox_overlaps(det_bboxes, gt_bboxes - 1)
+    gt_w = gt_bboxes[:, 2] - gt_bboxes[:, 0]
+    gt_h = gt_bboxes[:, 3] - gt_bboxes[:, 1]
+    iou_thrs = np.minimum((gt_w * gt_h) / ((gt_w + 10.0) * (gt_h + 10.0)),
+                          default_iou_thr)
+    # sort all detections by scores in descending order
+    sort_inds = np.argsort(-det_bboxes[:, -1])
+    for k, (min_area, max_area) in enumerate(area_ranges):
+        gt_covered = np.zeros(num_gts, dtype=bool)
+        # if no area range is specified, gt_area_ignore is all False
+        if min_area is None:
+            gt_area_ignore = np.zeros_like(gt_ignore_inds, dtype=bool)
+        else:
+            gt_areas = gt_w * gt_h
+            gt_area_ignore = (gt_areas < min_area) | (gt_areas >= max_area)
+        for i in sort_inds:
+            max_iou = -1
+            matched_gt = -1
+            # find best overlapped available gt
+            for j in range(num_gts):
+                # different from PASCAL VOC: allow finding other gts if the
+                # best overlapped ones are already matched by other det bboxes
+                if gt_covered[j]:
+                    continue
+                elif ious[i, j] >= iou_thrs[j] and ious[i, j] > max_iou:
+                    max_iou = ious[i, j]
+                    matched_gt = j
+            # there are 4 cases for a det bbox:
+            # 1. it matches a gt, tp = 1, fp = 0
+            # 2. it matches an ignored gt, tp = 0, fp = 0
+            # 3. it matches no gt and within area range, tp = 0, fp = 1
+            # 4. it matches no gt but is beyond area range, tp = 0, fp = 0
+            if matched_gt >= 0:
+                gt_covered[matched_gt] = 1
+                if not (gt_ignore_inds[matched_gt]
+                        or gt_area_ignore[matched_gt]):
+                    tp[k, i] = 1
+            elif min_area is None:
+                fp[k, i] = 1
+            else:
+                bbox = det_bboxes[i, :4]
+                area = (bbox[2] - bbox[0]) * (bbox[3] - bbox[1])
+                if area >= min_area and area < max_area:
+                    fp[k, i] = 1
+    return tp, fp
 
 
 def tpfp_default(det_bboxes,
@@ -97,12 +189,13 @@ def tpfp_default(det_bboxes,
         if area_ranges == [(None, None)]:
             fp[...] = 1
         else:
-            det_areas = bbox_areas(det_bboxes[:, :-1])
+            det_areas = (det_bboxes[:, 2] - det_bboxes[:, 0]) * (
+                det_bboxes[:, 3] - det_bboxes[:, 1])
             for i, (min_area, max_area) in enumerate(area_ranges):
                 fp[i, (det_areas >= min_area) & (det_areas < max_area)] = 1
         return tp, fp
 
-    ious = bbox_overlaps(det_bboxes[:, :-1], gt_bboxes)
+    ious = bbox_overlaps(det_bboxes, gt_bboxes)
     # for each det, the max iou with all gts
     ious_max = ious.max(axis=1)
     # for each det, which gt overlaps most with it
@@ -115,7 +208,8 @@ def tpfp_default(det_bboxes,
         if min_area is None:
             gt_area_ignore = np.zeros_like(gt_ignore_inds, dtype=bool)
         else:
-            gt_areas = bbox_areas(gt_bboxes)
+            gt_areas = (gt_bboxes[:, 2] - gt_bboxes[:, 0]) * (
+                gt_bboxes[:, 3] - gt_bboxes[:, 1])
             gt_area_ignore = (gt_areas < min_area) | (gt_areas >= max_area)
         for i in sort_inds:
             if ious_max[i] >= iou_thr:
@@ -131,7 +225,8 @@ def tpfp_default(det_bboxes,
             elif min_area is None:
                 fp[k, i] = 1
             else:
-                area = bbox_areas(det_bboxes[[i], :-1])
+                bbox = det_bboxes[i, :4]
+                area = (bbox[2] - bbox[0]) * (bbox[3] - bbox[1])
                 if area >= min_area and area < max_area:
                     fp[k, i] = 1
     return tp, fp
@@ -152,7 +247,6 @@ def get_cls_results(det_results, annotations, class_id):
     cls_gts = []
     cls_gts_ignore = []
     for ann in annotations:
-        bbox_dim = ann['bboxes'].shape[1]
         gt_inds = ann['labels'] == class_id
         cls_gts.append(ann['bboxes'][gt_inds, :])
 
@@ -160,7 +254,7 @@ def get_cls_results(det_results, annotations, class_id):
             ignore_inds = ann['labels_ignore'] == class_id
             cls_gts_ignore.append(ann['bboxes_ignore'][ignore_inds, :])
         else:
-            cls_gts_ignore.append(np.empty((0, bbox_dim), dtype=np.float32))
+            cls_gts_ignore.append(np.empty((0, 4), dtype=np.float32))
 
     return cls_dets, cls_gts, cls_gts_ignore
 
@@ -169,8 +263,9 @@ def eval_map(det_results,
              annotations,
              scale_ranges=None,
              iou_thr=0.5,
-             use_07_metric=True,
              dataset=None,
+             logger=None,
+             tpfp_fn=None,
              nproc=4):
     """Evaluate mAP of a dataset.
 
@@ -194,6 +289,13 @@ def eval_map(det_results,
         dataset (list[str] | str | None): Dataset name or dataset classes,
             there are minor differences in metrics for different datsets, e.g.
             "voc07", "imagenet_det", etc. Default: None.
+        logger (logging.Logger | str | None): The way to print the mAP
+            summary. See `mmcv.utils.print_log()` for details. Default: None.
+        tpfp_fn (callable | None): The function used to determine true/
+            false positives. If None, :func:`tpfp_default` is used as default
+            unless dataset is 'det' or 'vid' (:func:`tpfp_imagenet` in this
+            case). If it is given as a function, then this function is used
+            to evaluate tp & fp. Default None.
         nproc (int): Processes used for computing TP and FP.
             Default: 4.
 
@@ -214,9 +316,19 @@ def eval_map(det_results,
         # get gt and det bboxes of this class
         cls_dets, cls_gts, cls_gts_ignore = get_cls_results(
             det_results, annotations, i)
+        # choose proper function according to datasets to compute tp and fp
+        if tpfp_fn is None:
+            if dataset in ['det', 'vid']:
+                tpfp_fn = tpfp_imagenet
+            else:
+                tpfp_fn = tpfp_default
+        if not callable(tpfp_fn):
+            raise ValueError(
+                f'tpfp_fn has to be a function or None, but got {tpfp_fn}')
+
         # compute tp and fp for each image with multiple processes
         tpfp = pool.starmap(
-            tpfp_default,
+            tpfp_fn,
             zip(cls_dets, cls_gts, cls_gts_ignore,
                 [iou_thr for _ in range(num_imgs)],
                 [area_ranges for _ in range(num_imgs)]))
@@ -224,11 +336,12 @@ def eval_map(det_results,
         # calculate gt number of each scale
         # ignored gts or gts beyond the specific scale are not counted
         num_gts = np.zeros(num_scales, dtype=int)
-        for bbox in cls_gts:
+        for j, bbox in enumerate(cls_gts):
             if area_ranges is None:
                 num_gts[0] += bbox.shape[0]
             else:
-                gt_areas = bbox_areas(bbox)
+                gt_areas = (bbox[:, 2] - bbox[:, 0]) * (
+                    bbox[:, 3] - bbox[:, 1])
                 for k, (min_area, max_area) in enumerate(area_ranges):
                     num_gts[k] += np.sum((gt_areas >= min_area)
                                          & (gt_areas < max_area))
@@ -249,7 +362,7 @@ def eval_map(det_results,
             recalls = recalls[0, :]
             precisions = precisions[0, :]
             num_gts = num_gts.item()
-        mode = 'area' if not use_07_metric else '11points'
+        mode = 'area' if dataset != 'voc07' else '11points'
         ap = average_precision(recalls, precisions, mode)
         eval_results.append({
             'num_gts': num_gts,
@@ -277,7 +390,8 @@ def eval_map(det_results,
                 aps.append(cls_result['ap'])
         mean_ap = np.array(aps).mean().item() if aps else 0.0
 
-    print_map_summary(mean_ap, eval_results, dataset, area_ranges)
+    print_map_summary(
+        mean_ap, eval_results, dataset, area_ranges, logger=logger)
 
     return mean_ap, eval_results
 
@@ -285,7 +399,8 @@ def eval_map(det_results,
 def print_map_summary(mean_ap,
                       results,
                       dataset=None,
-                      scale_ranges=None):
+                      scale_ranges=None,
+                      logger=None):
     """Print mAP and results of each class.
 
     A table will be printed to show the gts/dets/recall/AP of each class and
@@ -296,7 +411,13 @@ def print_map_summary(mean_ap,
         results (list[dict]): Calculated from `eval_map()`.
         dataset (list[str] | str | None): Dataset name or dataset classes.
         scale_ranges (list[tuple] | None): Range of scales to be evaluated.
+        logger (logging.Logger | str | None): The way to print the mAP
+            summary. See `mmcv.utils.print_log()` for details. Default: None.
     """
+
+    if logger == 'silent':
+        return
+
     if isinstance(results[0]['ap'], np.ndarray):
         num_scales = len(results[0]['ap'])
     else:
@@ -318,8 +439,10 @@ def print_map_summary(mean_ap,
 
     if dataset is None:
         label_names = [str(i) for i in range(num_classes)]
-    else:
+    elif mmcv.is_str(dataset):
         label_names = get_classes(dataset)
+    else:
+        label_names = dataset
 
     if not isinstance(mean_ap, list):
         mean_ap = [mean_ap]
@@ -327,7 +450,7 @@ def print_map_summary(mean_ap,
     header = ['class', 'gts', 'dets', 'recall', 'ap']
     for i in range(num_scales):
         if scale_ranges is not None:
-            print(f'Scale range {scale_ranges[i]}')
+            print_log(f'Scale range {scale_ranges[i]}', logger=logger)
         table_data = [header]
         for j in range(num_classes):
             row_data = [
@@ -338,4 +461,4 @@ def print_map_summary(mean_ap,
         table_data.append(['mAP', '', '', '', f'{mean_ap[i]:.3f}'])
         table = AsciiTable(table_data)
         table.inner_footing_row_border = True
-        print('\n' + table.table)
+        print_log('\n' + table.table, logger=logger)
