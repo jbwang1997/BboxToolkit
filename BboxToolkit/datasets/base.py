@@ -63,19 +63,23 @@ def load_dataset(dataset_type, loading_args):
 
     start_time = time.time()
     data = []
+    num = 0
     for i, (dtype, largs) in enumerate(zip(dataset_type, loading_args)):
-        print(f'#### Num{i} Dataset_type: {dtype}.')
-        for k, v in loading_args.items():
+        print(f'#### NO.{i} Dataset Type: {dtype}.')
+        for k, v in largs.items():
             print(f'{k}: {v}')
 
         if dtype not in LOADING_FUNC:
             raise KeyError(f'No loading function of {dtype}')
-        loading_func = LOADING_FUNC[dataset_type.lower()]
-        data.extend(loading_func(**largs))
+        loading_func = LOADING_FUNC[dtype.lower()]
+        loaded_data = loading_func(**largs)
+
+        num += len(loaded_data)
+        data.append(loaded_data)
     end_time = time.time()
 
     print(f'Time consuming: {end_time - start_time:.3f}s.')
-    print(f'Data number: {len(data)}')
+    print(f'Data number: {num}')
     return data
 
 
@@ -97,13 +101,13 @@ def dump_dataset(dataset_type, dumping_args):
 
     start_time = time.time()
     for i, (dtype, dargs) in enumerate(zip(dataset_type, dumping_args)):
-        print(f'#### Num{i} Dataset_type: {dtype}.')
-        for k, v in dumping_args.items():
+        print(f'#### NO.{i} Dataset Type: {dtype}.')
+        for k, v in dargs.items():
             print(f'{k}: {v}')
 
         if dataset_type not in DUMPING_FUNC:
-            raise KeyError(f'No dumping function of {dataset_type}')
-        dumping_func = DUMPING_FUNC[dataset_type.lower()]
+            raise KeyError(f'No dumping function of {dtype}')
+        dumping_func = DUMPING_FUNC[dtype.lower()]
         dumping_func(**dargs)
     end_time = time.time()
 
