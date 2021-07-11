@@ -568,19 +568,11 @@ class Config:
 
     def dump(self, file=None):
         cfg_dict = super(Config, self).__getattribute__('_cfg_dict').to_dict()
-        if self.filename.endswith('.py'):
-            if file is None:
-                return self.pretty_text
-            else:
-                with open(file, 'w') as f:
-                    f.write(self.pretty_text)
+        if file is None:
+            return self.pretty_text
         else:
-            import mmcv
-            if file is None:
-                file_format = self.filename.split('.')[-1]
-                return mmcv.dump(cfg_dict, file_format=file_format)
-            else:
-                mmcv.dump(cfg_dict, file)
+            with open(file, 'w') as f:
+                f.write(self.pretty_text)
 
     def merge_from_dict(self, options, allow_list_keys=True):
         """Merge list into cfg_dict.
