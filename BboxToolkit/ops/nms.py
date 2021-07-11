@@ -5,6 +5,16 @@ from ..structures import BaseBbox
 
 
 def bbox_nms(bboxes, scores, iou_thr=0.5):
+    '''Non-maximum supression algorithm
+
+    Args:
+        bboxes (BaseBbox subclass): All boxes.
+        scores (np.ndarray): Scores of boxes.
+        iou_thr (float): IoU threshold.
+
+    Returns:
+        index array of keeping bboxes.
+    '''
     assert isinstance(bboxes, BaseBbox)
     order = scores.argsort()[::-1]
     bboxes = bboxes[order]

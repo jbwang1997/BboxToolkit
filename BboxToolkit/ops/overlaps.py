@@ -7,6 +7,19 @@ EPS = 1e-4
 
 
 def bbox_overlaps(bboxes1, bboxes2, mode='iou', is_aligned=False):
+    '''Calculate the IoU (instersection over union) or IoF (intersection over
+    self) between bboxes.
+
+    Args:
+        bboxes1 (BaseBbox subclass): a set of bboxes.
+        bboxes2 (BaseBbox subclass): other set of bboxes.
+        mode (str['iou' | 'iof']): The overlap mode.
+        is_aligned (bool): Whether bboxes1 and bboxes2 is aligned. If False,
+            each box in bboxes1 will be aligned with each box in bboxes2.
+
+    Returns:
+        np.ndarry of IoU or IoF.
+    '''
     assert mode in ['iou', 'iof']
     assert isinstance(bboxes1, BaseBbox)
     assert isinstance(bboxes2, BaseBbox)
@@ -14,6 +27,7 @@ def bbox_overlaps(bboxes1, bboxes2, mode='iou', is_aligned=False):
     rows, cols = len(bboxes1), len(bboxes2)
     if is_aligned:
         assert rows == cols
+    # Empty occasion.
     if rows * cols == 0:
         return np.zeros((rows, ), dtype=np.float32) if is_aligned \
                 else np.zeros((rows, cols), dtype=np.float32)
@@ -23,11 +37,13 @@ def bbox_overlaps(bboxes1, bboxes2, mode='iou', is_aligned=False):
     if not is_aligned:
         np_hbb1 = np_hbb1[:, None, :]
 
+    # Calculate hbb intersection.
     lt = np.maximum(np_hbb1[..., :2], np_hbb2[..., :2])
     rb = np.minimum(np_hbb1[..., 2:], np_hbb2[..., 2:])
     wh = np.clip(rb - lt, 0, np.inf)
     h_overlaps = wh[..., 0] * wh[..., 1]
 
+    # If all bboxes are hbbs, the calculation is easy.
     if isinstance(bboxes1, HBB) and isinstance(bboxes2, HBB):
         areas1 = (np_hbb1[..., 2] - np_hbb1[..., 0]) * (
             np_hbb1[..., 3] - np_hbb1[..., 1])
@@ -39,6 +55,8 @@ def bbox_overlaps(bboxes1, bboxes2, mode='iou', is_aligned=False):
         else:
             unions = np.maximum(areas1, EPS)
         return h_overlaps / unions
+    
+    # Or use shapely.geometry to calculate overlaps.
     else:
         areas1 = bboxes1.areas()
         if not is_aligned:
