@@ -1,5 +1,6 @@
-import inspect
 from abc import ABCMeta, abstractmethod
+from matplotlib.patches import Polygon, Rectangle
+from matplotlib.collections import PatchCollection
 
 
 class BaseBbox(metaclass=ABCMeta):
@@ -91,6 +92,58 @@ class BaseBbox(metaclass=ABCMeta):
 
         polys = self.to_poly()
         return new_cls.from_poly(polys)
+
+    def visualize(self, ax, texts, colors, thickness=1., font_size=10):
+        '''Specialize visualization methods for different types of bboxes.
+
+        Args:
+            ax (matplot.axes): The matplotlib.axes object.
+            texts (list): The text of each bbox.
+            colors (list): The color of each bbox.
+            thickness (float): Line thickness.
+            font_size (float): Text size.
+
+        Returns:
+            None
+        '''
+        num = len(self)
+        assert len(colors) == len(texts) == num
+        hbbs = self.to_type('hbb').bboxes
+
+        patches, face_colors, edge_colors = [], [], []
+        for text, color, hbb, ps in zip(texts, colors, hbbs, self):
+            xmin, ymin, xmax, ymax = hbb
+            if text:
+                ax.text(xmin,
+                        ymin,
+                        text,
+                        bbox={
+                            'alpha': 0.5,
+                            'pad': 0.7,
+                            'facecolor': color,
+                            'edgecolor': 'none'
+                        },
+                        color='white',
+                        fontsize=font_size,
+                        verticalalignment='bottom',
+                        horizontalalignment='left')
+
+            patches.append(Rectangle(
+                (xmin, ymin), xmax-xmin, ymax-ymin))
+            face_colors.append('none')
+            edge_colors.append(color)
+            for p in ps:
+                p = p.reshape(-1, 2)
+                patches.append(Polygon(p))
+                face_colors.append(color + (0.5, ))
+                edge_colors.append('none')
+
+        p = PatchCollection(
+            patches,
+            facecolors=face_colors,
+            edgecolors=edge_colors,
+            linewidths=thickness)
+        ax.add_collection(p)
 
     def __iter__(self):
         '''Iterate all Bboxes in polygon form.'''

@@ -1,6 +1,9 @@
 import cv2
 import numpy as np
 
+from matplotlib.patches import Rectangle
+from matplotlib.collections import PatchCollection
+
 from .base import BaseBbox
 from .poly import POLY
 from ..utils.defaults import pi
@@ -81,6 +84,54 @@ class OBB(BaseBbox):
             (x, y), (w, h), angle = cv2.minAreaRect(pts)
             obbs.append([x, y, w, h, angle/180*pi])
         return OBB(np.asarray(obbs))
+
+    def visualize(self, ax, texts, colors, thickness=1., font_size=10):
+        '''see :func:`BaseBbox.visualize`'''
+        num = len(self)
+        assert len(colors) == len(texts) == num
+
+        obbs = self.bboxes
+        ctr, w, h, t = np.split(self.bboxes, (2, 3, 4), axis=1)
+        Cos, Sin = np.cos(t), np.sin(t)
+
+        vec1 = np.concatenate(
+            [-w/2 * Cos, -w/2 * Sin], axis=1)
+        vec2 = np.concatenate(
+            [h/2 * Sin, -h/2 * Cos], axis=1)
+        anchors = ctr + vec1 + vec2
+        angles = t * 180 / pi
+        new_obbs = np.concatenate([anchors, w, h, angles], axis=1)
+
+        patches, edge_colors = [], []
+        for text, color, obb in zip(texts, colors, new_obbs):
+            x, y, w, h, angle = obb
+            if text:
+                ax.text(x,
+                        y,
+                        text,
+                        bbox={
+                            'alpha': 0.5,
+                            'pad': 0.7,
+                            'facecolor': color,
+                            'edgecolor': 'none'
+                        },
+                        color='white',
+                        rotation=angle,
+                        rotation_mode='anchor',
+                        fontsize=font_size,
+                        transform_rotates_text=True,
+                        verticalalignment='bottom',
+                        horizontalalignment='left')
+
+            patches.append(Rectangle((x, y), w, h, angle))
+            edge_colors.append(color)
+
+        p = PatchCollection(
+            patches,
+            facecolors='none',
+            edgecolors=edge_colors,
+            linewidths=thickness)
+        ax.add_collection(p)
 
     @classmethod
     def concatenate(cls, bboxes):

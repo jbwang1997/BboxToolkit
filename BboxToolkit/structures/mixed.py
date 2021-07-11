@@ -51,6 +51,11 @@ class MixedBbox(BaseBbox):
         raise NotImplementedError(
             'MixedBbox cannot be constructed from polygons.')
 
+    def visualize(self, ax, texts, colors, thickness=1., font_size=10):
+        '''see :func:`BaseBbox.visualize`'''
+        for _bboxes in self.bboxes:
+            _bboxes.visualize(ax, texts, colors, thickness, font_size)
+
     @classmethod
     def concatenate(cls, bboxes):
         '''Concatenate list of bboxes.'''

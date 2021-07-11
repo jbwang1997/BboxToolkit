@@ -1,6 +1,9 @@
 import cv2
 import numpy as np
 
+from matplotlib.patches import Rectangle
+from matplotlib.collections import PatchCollection
+
 from .base import BaseBbox
 from .poly import POLY
 
@@ -51,6 +54,31 @@ class PT(BaseBbox):
             _pts = np.concatenate(poly).reshape(-1, 2)
             pts.append(_pts.mean(axis=0))
         return PT(np.stack(pts, axis=0))
+
+    def visualize(self, ax, texts, colors, thickness=1., font_size=10):
+        '''see :func:`BaseBbox.visualize`'''
+        num = len(self)
+        assert len(colors) == len(texts) == num
+
+        offset, pts = 3, self.bboxes
+        for text, color, pt in zip(texts, colors, pts):
+            x, y = pt
+            if text:
+                ax.text(x+25/2*thickness,
+                        y,
+                        text,
+                        bbox={
+                            'alpha': 0.5,
+                            'pad': 0.7,
+                            'facecolor': color,
+                            'edgecolor': 'none'
+                        },
+                        color='white',
+                        fontsize=font_size,
+                        verticalalignment='center',
+                        horizontalalignment='left')
+
+        ax.scatter(pts[:, 0], pts[:, 1], s=25*thickness, c=colors, marker='o')
 
     @classmethod
     def concatenate(cls, bboxes):

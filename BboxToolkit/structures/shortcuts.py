@@ -143,8 +143,8 @@ def p4poly_2_poly(p4polys):
 
 @BaseBbox.register_shortcuts('p4poly', 'pt')
 def p4poly_2_pt(p4polys):
-    p4polys.p4polys.bboxes.reshape(-1, 4, 2)
-    return PT(p4polys.mean(axis=1))
+    pts = p4polys.bboxes.reshape(-1, 4, 2)
+    return PT(pts.mean(axis=1))
 
 
 #-------------------------POLY----------------------------

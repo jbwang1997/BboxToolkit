@@ -1,6 +1,9 @@
 import cv2
 import numpy as np
 
+from matplotlib.patches import Rectangle
+from matplotlib.collections import PatchCollection
+
 from .base import BaseBbox
 from .poly import POLY
 
@@ -57,6 +60,40 @@ class HBB(BaseBbox):
             rb_points = pts.max(axis=0)
             hbbs.append(np.concatenate([lt_points, rb_points]))
         return HBB(np.stack(hbbs, axis=0))
+
+    def visualize(self, ax, texts, colors, thickness=1., font_size=10):
+        '''see :func:`BaseBbox.visualize`'''
+        num = len(self)
+        assert len(colors) == len(texts) == num
+
+        patches, edge_colors = [], []
+        for text, color, hbb in zip(texts, colors, self.bboxes):
+            xmin, ymin, xmax, ymax = hbb
+            if text:
+                ax.text(xmin,
+                        ymin,
+                        text,
+                        bbox={
+                            'alpha': 0.5,
+                            'pad': 0.7,
+                            'facecolor': color,
+                            'edgecolor': 'none'
+                        },
+                        color='white',
+                        fontsize=font_size,
+                        verticalalignment='bottom',
+                        horizontalalignment='left')
+
+            patches.append(Rectangle(
+                (xmin, ymin), xmax-xmin, ymax-ymin))
+            edge_colors.append(color)
+
+        p = PatchCollection(
+            patches,
+            facecolors='none',
+            edgecolors=edge_colors,
+            linewidths=thickness)
+        ax.add_collection(p)
 
     @classmethod
     def concatenate(cls, bboxes):

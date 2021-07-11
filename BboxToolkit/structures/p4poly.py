@@ -1,8 +1,13 @@
 import cv2
 import numpy as np
 
+from matplotlib.patches import Rectangle, Polygon
+from matplotlib.collections import PatchCollection
+
 from .base import BaseBbox
 from .poly import POLY
+
+import pdb
 
 
 @BaseBbox.register_bbox_cls()
@@ -55,6 +60,60 @@ class P4POLY(BaseBbox):
                 pts = cv2.boxPoints(cv2.minAreaRect(pts))
                 p4polys.append(pts.reshape(-1))
         return P4POLY(np.stack(p4polys, axis=0))
+
+    def visualize(self, ax, texts, colors, thickness=1., font_size=10):
+        '''see :func:`BaseBbox.visualize`'''
+        num = len(self)
+        assert len(colors) == len(texts) == num
+
+        p4polys = self.bboxes
+        pts = p4polys.reshape(-1, 4, 2)
+        top_pts_idx = np.argsort(pts[..., 1], axis=1)[:, :2]
+        top_pts_idx = top_pts_idx[..., None].repeat(2, axis=2)
+        top_pts = np.take_along_axis(pts, top_pts_idx, axis=1)
+
+        x_sort_idx = np.argsort(top_pts[..., 0], axis=1)
+        left_idx, right_idx = x_sort_idx[:, :1], x_sort_idx[:, 1:]
+        left_idx = left_idx[..., None].repeat(2, axis=2)
+        left_pts = np.take_along_axis(top_pts, left_idx, axis=1).squeeze(1)
+        right_idx = right_idx[..., None].repeat(2, axis=2)
+        right_pts = np.take_along_axis(top_pts, right_idx, axis=1).squeeze(1)
+
+        x2 = right_pts[:, 1] - left_pts[:, 1]
+        x1 = right_pts[:, 0] - left_pts[:, 0]
+        angles = np.arctan2(x2, x1) / np.pi * 180
+
+        patches, edge_colors = [], []
+        for text, color, pt, anchor, angle in zip(
+                texts, colors, pts, left_pts, angles):
+            x, y = anchor
+            if text:
+                ax.text(x,
+                        y,
+                        text,
+                        bbox={
+                            'alpha': 0.5,
+                            'pad': 0.7,
+                            'facecolor': color,
+                            'edgecolor': 'none'
+                        },
+                        color='white',
+                        rotation=angle,
+                        rotation_mode='anchor',
+                        fontsize=font_size,
+                        transform_rotates_text=True,
+                        verticalalignment='bottom',
+                        horizontalalignment='left')
+
+            patches.append(Polygon(pt))
+            edge_colors.append(color)
+
+        p = PatchCollection(
+            patches,
+            facecolors='none',
+            edgecolors=edge_colors,
+            linewidths=thickness)
+        ax.add_collection(p)
 
     @classmethod
     def concatenate(cls, bboxes):
