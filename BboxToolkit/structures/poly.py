@@ -1,5 +1,7 @@
 import cv2
 import numpy as np
+
+from itertools import islice
 from .base import BaseBbox
 
 
@@ -47,17 +49,21 @@ class POLY(BaseBbox):
 
     def __getitem__(self, index):
         '''see :func:`BaseBbox.__getitem__`'''
+        # Convert slice to index.
+        if isinstance(index, slice):
+            index = islice(
+                range(len(self)),
+                index.start,
+                index.stop,
+                index.step
+            )
         # Convert bool ndarray to index.
-        if isinstance(index, np.ndarray):
+        elif isinstance(index, np.ndarray):
             assert index.ndim == 1
             if index.dtype.type is np.bool_:
                 index = np.nonzero(index)[0]
 
         output = POLY([])
-        if len(index) == 0:
-            # Zero index.
-            return output
-
         _pts = self.pts
         _regs = self.regs
         _objs = self.objs
@@ -68,6 +74,11 @@ class POLY(BaseBbox):
             pts.append(_pts[mask])
             regs.append(_regs[mask])
             objs.append(np.full((num_pts, ), i, dtype=np.int64))
+
+        # Empty occasion
+        if len(pts) == 0:
+            return output
+
         output.pts = np.concatenate(pts, axis=0)
         output.regs = np.concatenate(regs, axis=0)
         output.objs = np.concatenate(objs, axis=0)
@@ -75,7 +86,7 @@ class POLY(BaseBbox):
 
     def __len__(self):
         '''Number of Bboxes.'''
-        return 0 if self.objs.size == 0 else self.objs.max()
+        return 0 if self.objs.size == 0 else self.objs.max()+1
 
     def to_poly(self):
         '''Output the Bboxes polygons (list[list[np.ndarry]]).'''
@@ -87,11 +98,11 @@ class POLY(BaseBbox):
         regs = self.regs
         objs = self.objs
         polys = []
-        for i_obj in range(objs.max()):
+        for i_obj in range(objs.max() + 1):
             _pts = pts[objs == i_obj]
             _regs = regs[objs == i_obj]
             polys.append([_pts[_regs == i].reshape(-1)
-                          for i in range(_regs.max())])
+                          for i in range(_regs.max() + 1)])
         return polys
 
     @classmethod
@@ -102,6 +113,9 @@ class POLY(BaseBbox):
     @classmethod
     def concatenate(cls, bboxes):
         '''Concatenate list of bboxes.'''
+        if len(bboxes) == 0:
+            return POLY.gen_empty()
+
         pts, regs, objs = [], [], []
         start_len = 0
         for b in bboxes:

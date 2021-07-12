@@ -32,7 +32,7 @@ def hbb_2_obb(hbbs):
 @BaseBbox.register_shortcuts('hbb', 'p4poly')
 def hbb_2_p4poly(hbbs):
     l, t, r, b = np.split(hbbs.bboxes, 4, axis=1)
-    return P4POLY(np.stack([l, t, r, t, r, b, l, b], axis=1))
+    return P4POLY(np.concatenate([l, t, r, t, r, b, l, b], axis=1))
 
 
 @BaseBbox.register_shortcuts('hbb', 'poly')
@@ -52,7 +52,7 @@ def hbb_2_poly(hbbs):
 @BaseBbox.register_shortcuts('hbb', 'pt')
 def hbb_2_pt(hbbs):
     hbbs = hbbs.bboxes
-    return PT(hbbs[:, 2:] - hbbs[:, :2])
+    return PT((hbbs[:, 2:] + hbbs[:, :2]) / 2)
 
 
 #--------------------------OBB----------------------------
@@ -234,7 +234,7 @@ def pt_2_obb(pts):
 @BaseBbox.register_shortcuts('pt', 'p4poly')
 def pt_2_p4poly(pts):
     pts = pts.bboxes
-    return P4POLY(pts.tile(pts, 4, axis=1))
+    return P4POLY(np.concatenate([pts, pts, pts, pts], axis=1))
 
 
 @BaseBbox.register_shortcuts('pt', 'poly')

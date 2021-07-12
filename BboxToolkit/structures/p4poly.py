@@ -118,11 +118,14 @@ class P4POLY(BaseBbox):
     @classmethod
     def concatenate(cls, bboxes):
         '''Concatenate list of bboxes.'''
-        bboxes = []
+        if len(bboxes) == 0:
+            return P4POLY.gen_empty()
+
+        np_bboxes = []
         for b in bboxes:
             assert isinstance(b, P4POLY)
-            bboxes.append(b.bboxes)
-        return P4POLY(np.concatenate(bboxes, axis=0))
+            np_bboxes.append(b.bboxes)
+        return P4POLY(np.concatenate(np_bboxes, axis=0))
 
     def copy(self):
         '''Copy this instance.'''

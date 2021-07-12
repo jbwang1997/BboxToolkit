@@ -68,7 +68,7 @@ class OBB(BaseBbox):
         polys = []
         for bbox in self.bboxes:
             x, y, w, h, theta = bbox
-            pts = cv2.boxPoints((x, y), (w, h), theta/pi*180)
+            pts = cv2.boxPoints(((x, y), (w, h), theta/pi*180))
             polys.append([pts.reshape(-1)])
         return polys
 
@@ -136,11 +136,14 @@ class OBB(BaseBbox):
     @classmethod
     def concatenate(cls, bboxes):
         '''Concatenate list of bboxes.'''
-        bboxes = []
+        if len(bboxes) == 0:
+            return OBB.gen_empty()
+
+        np_bboxes = []
         for b in bboxes:
             assert isinstance(b, OBB)
-            bboxes.append(b.bboxes)
-        return OBB(np.concatenate(bboxes, axis=0))
+            np_bboxes.append(b.bboxes)
+        return OBB(np.concatenate(np_bboxes, axis=0))
 
     def copy(self):
         '''Copy this instance.'''

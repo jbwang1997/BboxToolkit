@@ -14,10 +14,15 @@ class MixedBbox(BaseBbox):
     '''
 
     def __init__(self, bboxes):
-        self.bboxes = []
+        bbox_list = []
         for _bboxes in bboxes:
-            assert isinstance(_bboxes, BaseBbox)
-            self.bboxes.append(_bboxes.copy())
+            if isinstance(_bboxes, MixedBbox):
+                bbox_list.extend(
+                    [b.copy() for b in _bboxes.bboxes])
+            else:
+                assert isinstance(_bboxes, BaseBbox)
+                bbox_list.append(_bboxes.copy())
+        self.bboxes = bbox_list
 
     def to_type(self, new_type):
         '''see :func:`BaseBbox.to_type`'''
@@ -59,13 +64,6 @@ class MixedBbox(BaseBbox):
     @classmethod
     def concatenate(cls, bboxes):
         '''Concatenate list of bboxes.'''
-        bboxes = []
-        for b in bboxes:
-            if isinstance(b, MixedBbox):
-                bboxes.extend(b.bboxes)
-            else:
-                assert isinstance(b, BaseBbox)
-                bboxes.append(b)
         return MixedBbox(bboxes)
 
     def copy(self):

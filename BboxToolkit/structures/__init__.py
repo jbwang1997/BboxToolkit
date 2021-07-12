@@ -5,4 +5,5 @@ from .p4poly import P4POLY
 from .poly import POLY
 from .pt import PT
 
+from .mixed import MixedBbox
 from .shortcuts import *
