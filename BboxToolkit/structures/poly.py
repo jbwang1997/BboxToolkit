@@ -52,11 +52,7 @@ class POLY(BaseBbox):
         # Convert slice to index.
         if isinstance(index, slice):
             index = islice(
-                range(len(self)),
-                index.start,
-                index.stop,
-                index.step
-            )
+                range(len(self)), index.start, index.stop, index.step)
         # Convert bool ndarray to index.
         elif isinstance(index, np.ndarray):
             assert index.ndim == 1
@@ -148,19 +144,14 @@ class POLY(BaseBbox):
         if len(self) == 0:
             return np.zeros((0, ), dtype=np.float32)
 
-        pts = self.pts
-        regs = self.regs
-        objs = self.objs
         areas = []
-        for i_obj in range(objs.max()):
+        for obj in self:
             area = 0
-            _pts = pts[objs == i_obj]
-            _regs = regs[objs == i_obj]
-            for i_reg in range(_regs.max()):
-                reg_pts = _pts[regs == i_reg]
+            for poly in obj:
                 area += 0.5 * np.abs(
-                    np.dot(reg_pts[:, 0], np.roll(reg_pts[:, 1], 1)) -\
-                    np.dot(reg_pts[:, 1], np.roll(reg_pts[:, 0], 1)))
+                    np.dot(poly[0::2], np.roll(poly[1::2], 1)) - \
+                    np.dot(poly[1::2], np.roll(poly[0::2], 1))
+                )
             areas.append(area)
         return np.asarray(areas, dtype=np.float32)
 
@@ -180,7 +171,7 @@ class POLY(BaseBbox):
         if M.shape[0] == 2:
             pts = cv2.transform(pts, M)
         elif M.shape[0] == 3:
-            pts = cv2.prospectiveTransform(pts, M)
+            pts = cv2.perspectiveTransform(pts, M)
         else:
             raise ValueError(f'Wrong M shape {M.shape}')
 

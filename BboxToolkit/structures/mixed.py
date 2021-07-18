@@ -27,6 +27,7 @@ class MixedBbox(BaseBbox):
     def to_type(self, new_type):
         '''see :func:`BaseBbox.to_type`'''
         bboxes = [b.to_type(new_type) for b in self.bboxes]
+        new_type = self.BBOX_CLASSES[new_type.lower()]
         return new_type.concatenate(bboxes)
 
     def __repr__(self):
@@ -36,6 +37,18 @@ class MixedBbox(BaseBbox):
 
     def __getitem__(self, index):
         '''see :func:`BaseBbox.__getitem__`'''
+        if isinstance(index, np.ndarray) and \
+                index.dtype.type is np.bool_:
+            assert index.shape[0] == len(self)
+            bboxes, start_i = [], 0
+            for b in self.bboxes:
+                _index = index[start_i:start_i + len(b)]
+                bboxes.append(b[_index])
+
+            mixed_bboxes = MixedBbox([])
+            mixed_bboxes.bboxes = bboxes
+            return mixed_bboxes
+
         raise NotImplementedError(
             'Cannot get items from MixedBbox by index.')
 
@@ -87,7 +100,9 @@ class MixedBbox(BaseBbox):
             bboxes.append(_bboxes.rotate(x, y, angle, keep_btype))
 
         if keep_btype:
-            return MixedBbox(bboxes)
+            mixed_bboxes = MixedBbox([])
+            mixed_bboxes.bboxes = bboxes
+            return mixed_bboxes
         else:
             return POLY.concatenate(bboxes)
 
@@ -98,7 +113,9 @@ class MixedBbox(BaseBbox):
             bboxes.append(_bboxes.warp(M, keep_btype))
 
         if keep_btype:
-            return MixedBbox(bboxes)
+            mixed_bboxes = MixedBbox([])
+            mixed_bboxes.bboxes = bboxes
+            return mixed_bboxes
         else:
             return POLY.concatenate(bboxes)
 
@@ -107,18 +124,27 @@ class MixedBbox(BaseBbox):
         bboxes = []
         for _bboxes in self.bboxes:
             bboxes.append(_bboxes.flip(W, H, direction))
-        return MixedBbox(bboxes)
+
+        mixed_bboxes = MixedBbox([])
+        mixed_bboxes.bboxes = bboxes
+        return mixed_bboxes
 
     def translate(self, x, y):
         '''see :func:`BaseBbox.translate`'''
         bboxes = []
         for _bboxes in self.bboxes:
             bboxes.append(_bboxes.translate(x, y))
-        return MixedBbox(bboxes)
+
+        mixed_bboxes = MixedBbox([])
+        mixed_bboxes.bboxes = bboxes
+        return mixed_bboxes
 
     def resize(self, ratios):
         '''see :func:`BaseBbox.resize`'''
         bboxes = []
         for _bboxes in self.bboxes:
             bboxes.append(_bboxes.resize(ratios))
-        return MixedBbox(bboxes)
+
+        mixed_bboxes = MixedBbox([])
+        mixed_bboxes.bboxes = bboxes
+        return mixed_bboxes

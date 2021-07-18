@@ -154,7 +154,7 @@ class HBB(BaseBbox):
         if M.shape[0] == 2:
             warped_pts = cv2.transform(pts, M)
         elif M.shape[0] == 3:
-            warped_pts = cv2.prospectiveTransform(pts, M)
+            warped_pts = cv2.perspectiveTransform(pts, M)
         else:
             raise ValueError(f'Wrong M shape {M.shape}')
 

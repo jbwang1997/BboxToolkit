@@ -5,7 +5,6 @@ from matplotlib.patches import Rectangle
 from matplotlib.collections import PatchCollection
 
 from .base import BaseBbox
-from .poly import POLY
 
 
 @BaseBbox.register_bbox_cls()
@@ -108,13 +107,13 @@ class PT(BaseBbox):
 
     def rotate(self, x, y, angle, keep_btype=True):
         '''see :func:`BaseBbox.rotate`'''
-        M = cv2.getRotationMatrix2D((x, ), angle, 1)
+        M = cv2.getRotationMatrix2D((x, y), angle, 1)
         pts = self.bboxes[:, None, :]
         pts =cv2.transform(pts, M)
 
         output = PT(pts[:, 0, :])
         if not keep_btype:
-            output = output.to_type(POLY)
+            output = output.to_type('poly')
         return output
 
     def warp(self, M, keep_btype=False):
@@ -123,13 +122,13 @@ class PT(BaseBbox):
         if M.shape[0] == 2:
             pts = cv2.transform(pts, M)
         elif M.shape[0] == 3:
-            pts = cv2.prospectiveTransform(pts, M)
+            pts = cv2.perspectiveTransform(pts, M)
         else:
             raise ValueError(f'Wrong M shape {M.shape}')
 
         output = PT(pts[:, 0, :])
         if not keep_btype:
-            output = output.to_type(POLY)
+            output = output.to_type('poly')
         return output
 
     def flip(self, W, H, direction='horizontal'):

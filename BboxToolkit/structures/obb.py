@@ -176,7 +176,7 @@ class OBB(BaseBbox):
 
         output = OBB(rotated_bboxes)
         if not keep_btype:
-            output = output.to_type(POLY)
+            output = output.to_type('poly')
         return output
 
     def warp(self, M, keep_btype=False):
@@ -198,7 +198,7 @@ class OBB(BaseBbox):
         if M.shape[0] == 2:
             warped_pts = cv2.transform(pts, M)
         elif M.shape[0] == 3:
-            warped_pts = cv2.prospectTransform(pts, M)
+            warped_pts = cv2.perspectiveTransform(pts, M)
 
         # Convert to ouputs.
         polys = warped_pts.reshape(-1, 8)
