@@ -36,7 +36,7 @@ def _convertToPx(value):
     return output
 
 
-def imgsize(filepath):
+def imsize(filepath):
     """Get image size
 
     Args:
