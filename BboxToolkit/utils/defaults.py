@@ -1,4 +1,3 @@
-'''Collect parameters using in BboxToolkit.'''
 import numpy as np
 
 
