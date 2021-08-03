@@ -81,7 +81,7 @@ def _load_dior_hbb_xml(xmlfile, cls2lbl):
             content['height'] = int(size.find('height').text)
 
         for obj in root.findall('object'):
-            cls = obj.find('name').text
+            cls = obj.find('name').text.lower()
             if cls not in cls2lbl:
                 continue
             labels.append(cls2lbl[cls])
@@ -119,7 +119,7 @@ def _load_dior_obb_xml(xmlfile, cls2lbl):
             content['height'] = int(size.find('height').text)
 
         for obj in root.findall('object'):
-            cls = obj.find('name').text
+            cls = obj.find('name').text.lower()
             if cls not in cls2lbl:
                 continue
             labels.append(cls2lbl[cls])
