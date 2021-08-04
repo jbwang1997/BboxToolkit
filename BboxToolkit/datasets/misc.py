@@ -1,19 +1,29 @@
+import itertools
 import os.path as osp
 import numpy as np
 import warnings
 
 from PIL import Image
 
+
+def product(*inputs):
+    return [''.join(e) for e in itertools.product(*inputs)]
+
 dataset_classes = {
-    'DOTA1': ('large-vehicle', 'swimming-pool', 'helicopter', 'bridge',
-              'plane', 'ship', 'soccer-ball-field', 'basketball-court',
-              'ground-track-field', 'small-vehicle', 'baseball-diamond',
-              'tennis-court', 'roundabout', 'storage-tank', 'harbor'),
+    'DOTA1_0': ('large-vehicle', 'swimming-pool', 'helicopter', 'bridge',
+                'plane', 'ship', 'soccer-ball-field', 'basketball-court',
+                'ground-track-field', 'small-vehicle', 'baseball-diamond',
+                'tennis-court', 'roundabout', 'storage-tank', 'harbor'),
     'DOTA1_5': ('large-vehicle', 'swimming-pool', 'helicopter', 'bridge',
                 'plane', 'ship', 'soccer-ball-field', 'basketball-court',
                 'ground-track-field', 'small-vehicle', 'baseball-diamond',
                 'tennis-court', 'roundabout', 'storage-tank', 'harbor',
                 'container-crane'),
+    'DOTA2_0': ('large-vehicle', 'swimming-pool', 'helicopter', 'bridge',
+                'plane', 'ship', 'soccer-ball-field', 'basketball-court',
+                'ground-track-field', 'small-vehicle', 'baseball-diamond',
+                'tennis-court', 'roundabout', 'storage-tank', 'harbor',
+                'container-crane', 'airport', 'helipad'),
     'DIOR': ('airplane', 'airport', 'baseballfield', 'basketballcourt', 'bridge',
              'chimney', 'expressway-service-area', 'expressway-toll-station',
              'dam', 'golffield', 'groundtrackfield', 'harbor', 'overpass', 'ship',
@@ -23,10 +33,11 @@ dataset_classes = {
 }
 
 dataset_aliases = {
-    'DOTA1': ['dota', 'dota1', 'DOTA', 'DOTA1'],
-    'DOTA1_5': ['dota1.5', 'dota1_5', 'DOTA1.5', 'DOTA1_5'],
+    'DOTA1_0': product(['dota', 'DOTA'], ['', '1', '1.0', '1_0']),
+    'DOTA1_5': product(['dota', 'DOTA'], ['1.5', '1_5']),
+    'DOTA2_0': product(['dota', 'DOTA'], ['2', '2.0', '2_0']),
     'DIOR': ['dior', 'DIOR'],
-    'HRSC': ['hrsc', 'HRSC']
+    'HRSC': product(['hrsc', 'HRSC'], ['', '2016'])
 }
 
 img_exts = ['.jpg', '.png', '.tif', '.bmp']

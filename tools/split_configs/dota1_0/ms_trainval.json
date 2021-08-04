@@ -2,10 +2,12 @@
     "nproc": 10,
     "load_type": "dota",
     "img_dirs": [
-        "path/to/DOTA/train/images/"
+        "data/DOTA1_0/train/images/",
+        "data/DOTA1_0/val/images/"
     ],
     "ann_dirs": [
-        "path/to/DOTA/train/labels/"
+        "data/DOTA1_0/train/labelTxt/",
+        "data/DOTA1_0/val/labelTxt/"
     ],
     "classes": null,
     "prior_annfile": null,
@@ -14,10 +16,10 @@
         1024
     ],
     "gaps": [
-        200
+        500
     ],
     "rates": [
-        1.0
+        0.5, 1.0, 1.5
     ],
     "img_rate_thr": 0.6,
     "iof_thr": 0.7,
@@ -25,6 +27,6 @@
     "padding_value": [
         104, 116, 124
     ],
-    "save_dir": "path/to/ss/splitted/train/",
+    "save_dir": "data/split_ms_dota1_0/trainval/",
     "save_ext": ".png"
 }

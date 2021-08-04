@@ -36,7 +36,7 @@ We implemented some tools using BboxToolkit in `/BboxToolkit/tools/`.
 
 **example**
 ```shell
-python img_split.py --base_json split_configs/ss_dota_train.json
+python img_split.py --base_json split_configs/dota1_0/ss_train.json
 
 # ``or``
 
