@@ -10,6 +10,7 @@ from multiprocessing import Pool
 from functools import partial
 
 from .misc import get_classes, img_exts
+from ..transforms import bbox2type
 
 
 def load_dior_hbb(img_dir, ann_dir=None, classes=None, nproc=10):
@@ -140,6 +141,12 @@ def _load_dior_obb_xml(xmlfile, cls2lbl):
             else np.zeros((0, 8), dtype=np.float32)
     labels = np.array(labels, dtype=np.int64) if labels \
             else np.zeros((0, ), dtype=np.int64)
+
+    bboxes = bbox2type(bboxes, 'obb')
+    ctr, wh, theta = np.split(bboxes, (2, 4), axis=1)
+    wh = np.maximum(wh, 1)
+    bboxes = np.concatenate([ctr, wh, theta], axis=1)
+
     anns = dict(bboxes=bboxes, labels=labels)
     content['ann'] = anns
     return content
