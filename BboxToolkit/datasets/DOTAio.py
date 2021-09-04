@@ -1,6 +1,7 @@
 import re
 import os
 import time
+import zipfile
 import warnings
 
 import os.path as osp
@@ -159,15 +160,18 @@ def _load_dota_submission_txt(subfile):
     return anns_dict
 
 
-def save_dota_submission(save_dir, id_list, dets_list, task='Task1', classes=None):
+def save_dota_submission(save_dir, id_list, dets_list, task='Task1', classes=None, with_zipfile=True):
     assert task in ['Task1', 'Task2']
     classes = get_classes('DOTA' if classes is None else classes)
-    if not osp.exists(save_dir):
-        os.makedirs(save_dir)
 
-    files = [open(osp.join(save_dir ,task+'_'+cls+'.txt'), 'w') for cls in classes]
+    if osp.exists(save_dir):
+        raise ValueError(f'The save_dir should be a non-exist path, but {save_dir} is existing')
+    os.makedirs(save_dir)
+
+    files = [osp.join(save_dir ,task+'_'+cls+'.txt') for cls in classes]
+    file_objs = [open(f, 'w') for f in files]
     for img_id, dets_per_cls in zip(id_list, dets_list):
-        for f, dets in zip(files, dets_per_cls):
+        for f, dets in zip(file_objs, dets_per_cls):
             bboxes, scores = dets[:, :-1], dets[:, -1]
 
             if task == 'Task1':
@@ -181,5 +185,12 @@ def save_dota_submission(save_dir, id_list, dets_list, task='Task1', classes=Non
                 txt_element = [img_id, str(score)] + ['%.2f'%(p) for p in bbox]
                 f.writelines(' '.join(txt_element)+'\n')
 
-    for f in files:
+    for f in file_objs:
         f.close()
+
+    if with_zipfile:
+        target_name = osp.split(save_dir)[-1]
+        with zipfile.ZipFile(osp.join(save_dir, target_name+'.zip'), 'w',
+                             zipfile.ZIP_DEFLATED) as t:
+            for f in files:
+                t.write(f, osp.split(f)[-1])

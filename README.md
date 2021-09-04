@@ -43,6 +43,6 @@ pip install -v -e . # or "python setup.py develop"
 
 Please reference [USAGE.md](USAGE.md) for detail.
 
-## Ackonwledgement
+## Ackownledgement
 
 BboxToolkit refers to [DOTA_devkit](https://github.com/CAPTAIN-WHU/DOTA_devkit), [MMCV](https://github.com/open-mmlab/mmcv), and [MMDetection](https://github.com/open-mmlab/mmdetection). [DOTA_devkit](https://github.com/CAPTAIN-WHU/DOTA_devkit) is the toolbox for [DOTA](https://arxiv.org/abs/1711.10398) Dataset [MMCV](https://github.com/open-mmlab/mmcv) is a foundational python library for computer vision. [MMDetection](https://github.com/open-mmlab/mmdetection) is an open source object detection toolbox based on PyTorch.
