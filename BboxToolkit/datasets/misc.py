@@ -30,6 +30,7 @@ dataset_classes = {
              'stadium', 'storagetank', 'tenniscourt', 'trainstation', 'vehicle',
              'windmill'),
     'HRSC': ('ship', ),
+    'MSRA_TD500': ('text', ),
 }
 
 dataset_aliases = {
@@ -37,10 +38,11 @@ dataset_aliases = {
     'DOTA1_5': product(['dota', 'DOTA'], ['1.5', '1_5']),
     'DOTA2_0': product(['dota', 'DOTA'], ['2', '2.0', '2_0']),
     'DIOR': ['dior', 'DIOR'],
-    'HRSC': product(['hrsc', 'HRSC'], ['', '2016'])
+    'HRSC': product(['hrsc', 'HRSC'], ['', '2016']),
+    'MSRA_TD500': ['msra_td500', 'MSRA_TD500'],
 }
 
-img_exts = ['.jpg', '.png', '.tif', '.bmp']
+img_exts = ['.jpg', '.JPG', '.png', '.tif', '.bmp']
 
 
 def read_img_info(imgpath):

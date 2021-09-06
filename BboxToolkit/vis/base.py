@@ -73,8 +73,7 @@ def imshow(img, win_name='', wait_time=0, max_size=1000):
         while True:
             ret = cv2.waitKey(1)
 
-            closed = cv2.getWindowProperty(win_name, cv2.WND_PROP_VISIBLE) < 1
-            # if user closed window or if some key pressed
+            closed = cv2.getWindowProperty(win_name, cv2.WND_PROP_AUTOSIZE) == -1
             if closed or ret != -1:
                 break
     else:
