@@ -1,6 +1,5 @@
 import os
 import time
-import warnings
 import os.path as osp
 import xml.etree.ElementTree as ET
 import numpy as np
@@ -71,7 +70,7 @@ def _load_dior_hbb_xml(xmlfile, cls2lbl):
     if xmlfile is None:
         pass
     elif not osp.exists(xmlfile):
-        warnings.warn(f"Can't find {xmlfile}, treated as empty xmlfile")
+        print(f"Can't find {xmlfile}, treated as empty xmlfile")
     else:
         tree = ET.parse(xmlfile)
         root = tree.getroot()
@@ -109,7 +108,7 @@ def _load_dior_obb_xml(xmlfile, cls2lbl):
     if xmlfile is None:
         pass
     elif not osp.exists(xmlfile):
-        warnings.warn(f"Can't find {xmlfile}, treated as empty xmlfile")
+        print(f"Can't find {xmlfile}, treated as empty xmlfile")
     else:
         tree = ET.parse(xmlfile)
         root = tree.getroot()

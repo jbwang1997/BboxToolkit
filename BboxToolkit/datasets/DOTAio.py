@@ -2,7 +2,6 @@ import re
 import os
 import time
 import zipfile
-import warnings
 
 import os.path as osp
 import numpy as np
@@ -61,7 +60,7 @@ def _load_dota_txt(txtfile, cls2lbl):
     if txtfile is None:
         pass
     elif not osp.exists(txtfile):
-        warnings.warn(f"Can't find {txtfile}, treated as empty txtfile")
+        print(f"Can't find {txtfile}, treated as empty txtfile")
     else:
         with open(txtfile, 'r') as f:
             for line in f:
@@ -140,7 +139,7 @@ def load_dota_submission(ann_dir, img_dir=None, classes=None, nproc=10):
 
 def _load_dota_submission_txt(subfile):
     if not osp.exists(subfile):
-        warnings.warn(f"Can't find {subfile}, treated as empty subfile")
+        print(f"Can't find {subfile}, treated as empty subfile")
         return dict()
 
     collector = defaultdict(list)

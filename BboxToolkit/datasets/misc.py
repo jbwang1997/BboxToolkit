@@ -1,7 +1,6 @@
 import itertools
 import os.path as osp
 import numpy as np
-import warnings
 
 from PIL import Image
 
@@ -155,7 +154,7 @@ def split_imgset(contents, imgset):
         img_id = osp.split(img_id.strip())[-1]
         img_id = osp.splitext(img_id)[0]
         if img_id not in id_mapper:
-            warnings.warn(f"Can't find ID:{img_id} image!")
+            print(f"Can't find ID:{img_id} image!")
             continue
 
         imgset_contents.append(contents[id_mapper[img_id]])
