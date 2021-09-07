@@ -30,6 +30,7 @@ dataset_classes = {
              'windmill'),
     'HRSC': ('ship', ),
     'MSRA_TD500': ('text', ),
+    'RCTW_17': ('text', ),
 }
 
 dataset_aliases = {
@@ -38,7 +39,8 @@ dataset_aliases = {
     'DOTA2_0': product(['dota', 'DOTA'], ['2', '2.0', '2_0']),
     'DIOR': ['dior', 'DIOR'],
     'HRSC': product(['hrsc', 'HRSC'], ['', '2016']),
-    'MSRA_TD500': ['msra_td500', 'MSRA_TD500'],
+    'MSRA_TD500': ['msra_td500', 'MSRA_TD500', 'msra-td500', 'MSRA-TD500'],
+    'RCTW_17': ['rctw_17', 'RCTW_17', 'rctw-17', 'RCTW-17'],
 }
 
 img_exts = ['.jpg', '.JPG', '.png', '.tif', '.bmp']

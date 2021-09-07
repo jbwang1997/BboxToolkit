@@ -2,7 +2,7 @@ import numpy as np
 from multiprocessing import Pool
 from terminaltables import AsciiTable
 
-from .misc import get_classes
+from ..datasets.misc import get_classes
 from ..geometry import bbox_overlaps, bbox_areas
 
 

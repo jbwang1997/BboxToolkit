@@ -14,7 +14,6 @@ def load_msra_td500(img_dir, ann_dir=None, classes=None, nproc=10):
         print('load_msra_td500 loads all objects as `text`, arguments classes is no use')
 
     imgpaths = [f for f in os.listdir(img_dir) if f[-4:] in img_exts]
-    print(len(imgpaths))
     _load_func = partial(_load_msra_td500_single,
                          img_dir=img_dir,
                          ann_dir=ann_dir)

@@ -5,6 +5,9 @@ import BboxToolkit.datasets
 from .vis import *
 import BboxToolkit.vis
 
+from .evaluation import *
+import BboxToolkit.evaluation
+
 from .utils import (get_bbox_type, get_bbox_dim, choice_by_type,
                     regular_theta, regular_obb)
 from .transforms import (poly2hbb, poly2obb, rectpoly2obb, obb2poly, obb2hbb,
