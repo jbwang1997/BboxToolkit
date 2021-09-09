@@ -14,7 +14,7 @@ from collections import defaultdict
 from .io import load_imgs
 from .misc import get_classes, img_exts
 from ..utils import get_bbox_type
-from ..geometry import bbox2type
+from ..transforms import bbox2type
 
 
 def load_dota(img_dir, ann_dir=None, classes=None, nproc=10):

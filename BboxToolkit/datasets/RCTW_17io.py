@@ -8,7 +8,8 @@ from PIL import Image
 from functools import partial
 from multiprocessing import Pool
 from .misc import img_exts
-from ..geometry import bbox2type
+from ..geometry import bbox_areas
+from ..transforms import bbox2type
 
 
 def load_rctw_17(img_dir, ann_dir=None, classes=None, nproc=10):
@@ -65,6 +66,18 @@ def _load_rctw_17_txt(txtfile):
 
     bboxes = np.array(bboxes, dtype=np.float32) if bboxes \
             else np.zeros((0, 8), dtype=np.float32)
+    areas = bbox_areas(bboxes)
+    if (areas < 1).any():
+        error_bboxes = bboxes[areas < 1]
+        error_bboxes = bbox2type(error_bboxes, 'obb')
+
+        ctr, wh, theta = np.split(error_bboxes, (2, 4), axis=1)
+        wh = np.maximum(wh, 1)
+
+        checked_bboxes = np.concatenate([ctr, wh, theta], axis=1)
+        checked_bboxes = bbox2type(checked_bboxes, 'poly')
+        bboxes[areas < 1] = checked_bboxes
+
     diffs = np.array(diffs, dtype=np.int64) if diffs \
             else np.zeros((0, ), dtype=np.int64)
     labels = np.zeros((bboxes.shape[0], ), dtype=np.int64)
