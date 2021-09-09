@@ -52,12 +52,15 @@ def _load_rctw_17_txt(txtfile):
     elif not osp.isfile(txtfile):
         print(f'Cannot find {txtfile}, treated as empty txtfile')
     else:
-        with open(txtfile, 'r') as f:
+        with open(txtfile, 'r', encoding='utf-8-sig') as f:
             for line in f:
                 items = line.strip().split(',')
 
                 bboxes.append([float(i) for i in items[:8]])
-                diffs.append(int(items[8]))
+                try: # Some annotations is wrong
+                    diffs.append(int(items[8]))
+                except ValueError:
+                    diffs.append(0)
                 texts.append(items[-1][1:-1])
 
     bboxes = np.array(bboxes, dtype=np.float32) if bboxes \
