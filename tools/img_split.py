@@ -4,14 +4,16 @@ import os
 import cv2
 import time
 import json
+import logging
 import argparse
+import datetime
 import itertools
 import numpy as np
 import os.path as osp
 
 from math import ceil
 from functools import partial, reduce
-from multiprocessing import Pool
+from multiprocessing import Pool, Manager
 
 
 def add_parser(parser):
@@ -191,16 +193,45 @@ def crop_and_save_img(info, windows, window_anns, img_dir, no_padding,
     return patch_infos
 
 
-def single_split(arguments, sizes, gaps, img_rate_thr, iof_thr,
-                 no_padding, padding_value, save_dir, img_ext):
+def single_split(arguments, sizes, gaps, img_rate_thr, iof_thr, no_padding,
+                 padding_value, save_dir, img_ext, lock, prog, total, logger):
     info, img_dir = arguments
     windows = get_sliding_window(info, sizes, gaps, img_rate_thr)
     window_anns = get_window_obj(info, windows, iof_thr)
     patch_infos = crop_and_save_img(info, windows, window_anns, img_dir,
                                     no_padding, padding_value, save_dir, img_ext)
     assert patch_infos
-    print(f"\t{info['id']} generates {len(patch_infos)} patches")
+
+    lock.acquire()
+    prog.value += 1
+    msg = f'({prog.value/total:3.1%} {prog.value}:{total})'
+    msg += ' - ' + f"Filename: {info['filename']}"
+    msg += ' - ' + f"width: {info['width']:<5d}"
+    msg += ' - ' + f"height: {info['height']:<5d}"
+    msg += ' - ' + f"Objects: {len(info['ann']['bboxes']):<5d}"
+    msg += ' - ' + f"Patches: {len(patch_infos)}"
+    logger.info(msg)
+    lock.release()
+
     return patch_infos
+
+
+def setup_logger(log_path):
+    logger = logging.getLogger('img split')
+    formatter = logging.Formatter('%(asctime)s - %(message)s')
+    now = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+    log_path = osp.join(log_path, now + '.log')
+    handlers = [
+        logging.StreamHandler(),
+        logging.FileHandler(log_path, 'w')
+    ]
+
+    for handler in handlers:
+        handler.setFormatter(formatter)
+        handler.setLevel(logging.INFO)
+        logger.addHandler(handler)
+    logger.setLevel(logging.INFO)
+    return logger
 
 
 def main():
@@ -218,6 +249,7 @@ def main():
     save_files = osp.join(args.save_dir, 'annfiles')
     os.makedirs(save_imgs)
     os.makedirs(save_files)
+    logger = setup_logger(save_files)
 
     print('Loading original data!!!')
     infos, img_dirs = [], []
@@ -237,6 +269,7 @@ def main():
 
     print('Start splitting images!!!')
     start = time.time()
+    manager = Manager()
     worker = partial(single_split,
                      sizes=sizes,
                      gaps=gaps,
@@ -245,7 +278,11 @@ def main():
                      no_padding=args.no_padding,
                      padding_value=padding_value,
                      save_dir=save_imgs,
-                     img_ext=args.save_ext)
+                     img_ext=args.save_ext,
+                     lock=manager.Lock(),
+                     prog=manager.Value('i', 0),
+                     total=len(infos),
+                     logger=logger)
 
     if args.nproc > 1:
         pool = Pool(args.nproc)
