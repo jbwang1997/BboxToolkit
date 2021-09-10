@@ -14,6 +14,8 @@ def load_hrsc(img_dir, ann_dir, classes=None, img_keys=dict(),
               obj_keys=dict(), nproc=10):
     if classes is not None:
         print('load_hrsc loads all objects as ship, arguments classes is no use')
+    assert osp.isdir(img_dir), f'The {img_dir} is not an existing dir!'
+    assert ann_dir is None or osp.isdir(ann_dir), f'The {ann_dir} is not an existing dir!'
 
     contents = []
     print('Starting loading HRSC dataset information.')

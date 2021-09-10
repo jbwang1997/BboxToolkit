@@ -15,6 +15,8 @@ from ..transforms import bbox2type
 def load_rctw_17(img_dir, ann_dir=None, classes=None, nproc=10):
     if classes is not None:
         print('load_rctw_17 loads all objects as `text`, arguments classes is no use')
+    assert osp.isdir(img_dir), f'The {img_dir} is not an existing dir!'
+    assert ann_dir is None or osp.isdir(ann_dir), f'The {ann_dir} is not an existing dir!'
 
     imgpaths = [f for f in os.listdir(img_dir) if f[-4:] in img_exts]
     _load_func = partial(_load_rctw_17_single,
@@ -37,7 +39,7 @@ def load_rctw_17(img_dir, ann_dir=None, classes=None, nproc=10):
 
 def _load_rctw_17_single(imgfile, img_dir, ann_dir):
     img_id, _ = osp.splitext(imgfile)
-    txtfile = None if imgfile is None else osp.join(ann_dir, img_id+'.txt')
+    txtfile = None if ann_dir is None else osp.join(ann_dir, img_id+'.txt')
     content = _load_rctw_17_txt(txtfile)
 
     imgfile = osp.join(img_dir, imgfile)
