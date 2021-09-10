@@ -71,7 +71,7 @@ def _load_dior_hbb_xml(xmlfile, cls2lbl):
     content, bboxes, labels = dict(), list(), list()
     if xmlfile is None:
         pass
-    elif not osp.exists(xmlfile):
+    elif not osp.isfile(xmlfile):
         print(f"Can't find {xmlfile}, treated as empty xmlfile")
     else:
         tree = ET.parse(xmlfile)
@@ -109,7 +109,7 @@ def _load_dior_obb_xml(xmlfile, cls2lbl):
     content, bboxes, labels = dict(), list(), list()
     if xmlfile is None:
         pass
-    elif not osp.exists(xmlfile):
+    elif not osp.isfile(xmlfile):
         print(f"Can't find {xmlfile}, treated as empty xmlfile")
     else:
         tree = ET.parse(xmlfile)

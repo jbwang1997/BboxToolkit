@@ -1,3 +1,4 @@
+import re
 import os
 import time
 import zipfile
@@ -7,6 +8,8 @@ import os.path as osp
 from PIL import Image
 from functools import partial
 from multiprocessing import Pool
+
+from .io import load_imgs
 from .misc import img_exts
 from ..geometry import bbox_areas
 from ..transforms import bbox2type
@@ -34,7 +37,7 @@ def load_rctw_17(img_dir, ann_dir=None, classes=None, nproc=10):
     end_time = time.time()
     print(f'Finishing loading RCTW-17, get {len(contents)} images, ',
           f'using {end_time-start_time:.3f}s.')
-    return contents, ['text']
+    return contents, ('text', )
 
 
 def _load_rctw_17_single(imgfile, img_dir, ann_dir):
@@ -84,6 +87,68 @@ def _load_rctw_17_txt(txtfile):
             else np.zeros((0, ), dtype=np.int64)
     labels = np.zeros((bboxes.shape[0], ), dtype=np.int64)
     ann = dict(bboxes=bboxes, labels=labels, diffs=diffs, texts=texts)
+    return dict(ann=ann)
+
+
+def load_rctw_17_submission(ann_dir, img_dir=None, classes=None, nproc=10):
+    if classes is not None:
+        print('load_rctw_17_submission loads all objects as `text`, ',
+              'arguments classes is no use')
+    assert osp.isdir(ann_dir), f'The {ann_dir} is not an existing dir!'
+    assert img_dir is None or osp.isdir(img_dir), f'The {img_dir} is not an existing dir!'
+
+    print('Starting loading RCTW-17 submission information')
+    start_time = time.time()
+    img_mapper = None
+    if img_dir is not None:
+        img_infos, _ = load_imgs(img_dir, nproc=nproc, def_bbox_type=None)
+        img_mapper = {info['id']: info for info in img_infos}
+
+    pattern = r'task(1|2)_(.*)\.txt'
+    contents = []
+    for f in os.listdir(ann_dir):
+        match_objs = re.match(pattern, f)
+        if match_objs is None:
+            continue
+
+        task = match_objs.group(1)
+        img_id = match_objs.group(2)
+        content = img_mapper[img_id] if img_mapper is not None \
+                else dict(id=img_id)
+
+        txtfile = osp.join(ann_dir, f)
+        txtinfo = _load_rctw_17_submission_txt(txtfile, task)
+        content.update(txtinfo)
+        contents.append(content)
+    end_time = time.time()
+    print(f'Finishing loading RCTW-17 submission, get {len(contents)} images, ',
+          f'using {end_time-start_time:.3f}s.')
+    return contents, ('text', )
+
+
+def _load_rctw_17_submission_txt(txtfile, task):
+    bboxes, score_or_txts = [], []
+    if txtfile is None:
+        pass
+    elif not osp.isfile(txtfile):
+        print(f"Can't find {txtfile}, treated as empty txtfile")
+    else:
+        with open(txtfile, 'r') as f:
+            for line in f:
+                items = line.strip().split(',')
+                bboxes.append([float(p) for p in items[:8]])
+                i = float(items[8]) if task == '1' else items[8]
+                score_or_txts.append(i)
+
+    ann = dict()
+    if task == '1':
+        ann['scores'] = np.array(score_or_txts, dtype=np.float32) if score_or_txts \
+            else np.zeros((0, ), dtype=np.float32)
+    else:
+        ann['texts'] = score_or_txts
+    ann['bboxes'] = np.array(bboxes, dtype=np.float32) if bboxes \
+            else np.zeros((0, 8), dtype=np.float32)
+    ann['labels'] = np.zeros((len(bboxes), ), dtype=np.int64)
     return dict(ann=ann)
 
 

@@ -61,7 +61,7 @@ def _load_dota_txt(txtfile, cls2lbl):
     gsd, bboxes, labels, diffs = None, [], [], []
     if txtfile is None:
         pass
-    elif not osp.exists(txtfile):
+    elif not osp.isfile(txtfile):
         print(f"Can't find {txtfile}, treated as empty txtfile")
     else:
         with open(txtfile, 'r') as f:
@@ -94,6 +94,8 @@ def _load_dota_txt(txtfile, cls2lbl):
 
 def load_dota_submission(ann_dir, img_dir=None, classes=None, nproc=10):
     classes = get_classes('DOTA' if classes is None else classes)
+    assert osp.isdir(ann_dir), f'The {ann_dir} is not an existing dir!'
+    assert img_dir is None or osp.isdir(img_dir), f'The {img_dir} is not an existing dir!'
 
     file_pattern = r'Task[1|2]_(.*)\.txt'
     cls2file_mapper = dict()
@@ -140,7 +142,7 @@ def load_dota_submission(ann_dir, img_dir=None, classes=None, nproc=10):
 
 
 def _load_dota_submission_txt(subfile):
-    if not osp.exists(subfile):
+    if not osp.isfile(subfile):
         print(f"Can't find {subfile}, treated as empty subfile")
         return dict()
 

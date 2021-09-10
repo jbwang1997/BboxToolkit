@@ -60,7 +60,7 @@ def _load_hrsc_xml(xmlfile, img_keys=dict(), obj_keys=dict()):
     ann = {k: [] for k in obj_keys}
     if xmlfile is None:
         pass
-    elif not osp.exists(xmlfile):
+    elif not osp.isfile(xmlfile):
         print(f"Can't find {xmlfile}, treated as empty xmlfile")
     else:
         tree = ET.parse(xmlfile)

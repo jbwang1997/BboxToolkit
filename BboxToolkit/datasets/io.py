@@ -12,9 +12,10 @@ from .misc import read_img_info, change_cls_order, get_classes
 
 def load_imgs(img_dir, ann_dir=None, classes=None, nproc=10,
               def_bbox_type='poly'):
-    assert def_bbox_type in ['hbb', 'obb', 'poly']
+    assert def_bbox_type in ['hbb', 'obb', 'poly', None]
+    assert osp.isdir(img_dir), f'The {img_dir} is not an existing dir!'
     if ann_dir is not None:
-        print('ann_dir is no use in load_pseudo function')
+        print('ann_dir is no use in load_imgs function')
 
     print('Starting loading images information')
     start_time = time.time()
@@ -27,23 +28,25 @@ def load_imgs(img_dir, ann_dir=None, classes=None, nproc=10,
     else:
         infos = list(map(read_img_info, imgpaths))
 
-    contents = []
-    for info in infos:
-        if info is None:
-            continue
-        bbox_dim = get_bbox_dim(def_bbox_type)
-        bboxes = np.zeros((0, bbox_dim), dtype=np.float32)
-        labels = np.zeros((0, ), dtype=np.int64)
-        info['ann'] = dict(bboxes=bboxes, labels=labels)
-        contents.append(info)
-    classes = [] if classes is None else classes
+    if def_bbox_type is not None:
+        for info in infos:
+            if info is None:
+                continue
+            bbox_dim = get_bbox_dim(def_bbox_type)
+            bboxes = np.zeros((0, bbox_dim), dtype=np.float32)
+            labels = np.zeros((0, ), dtype=np.int64)
+            info['ann'] = dict(bboxes=bboxes, labels=labels)
+    classes = () if classes is None else classes
     end_time = time.time()
-    print(f'Finishing loading images, get {len(contents)} iamges,',
+    print(f'Finishing loading images, get {len(infos)} iamges,',
           f'using {end_time-start_time:.3f}s.')
-    return contents, classes
+    return infos, classes
 
 
 def load_pkl(ann_dir, img_dir=None, classes=None, nproc=10):
+    assert osp.isdir(ann_dir), f'The {ann_dir} is not an existing dir!'
+    assert img_dir is None or osp.isdir(img_dir), f'The {img_dir} is not an existing dir!'
+
     print('Starting loading pkl information')
     start_time = time.time()
     data = pickle.load(open(ann_dir, 'rb'))
