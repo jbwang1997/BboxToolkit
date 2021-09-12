@@ -40,6 +40,7 @@ def imshow_bboxes(img,
                   score_thr=0,
                   colors='green',
                   thickness=1,
+                  with_text=True,
                   font_size=10,
                   show=True,
                   win_name='',
@@ -86,12 +87,15 @@ def imshow_bboxes(img,
             cls_bboxes = cls_bboxes[cls_bboxes[:, -1] > score_thr]
             cls_bboxes, cls_scores = cls_bboxes[:, :-1], cls_bboxes[:, -1]
 
-        texts = []
-        for j in range(len(cls_bboxes)):
-            text = f'cls: {i}' if class_names is None else class_names[i]
-            if with_score:
-                text += f'|{cls_scores[j]:.02f}'
-            texts.append(text)
+        if not with_text:
+            texts = None
+        else:
+            texts = []
+            for j in range(len(cls_bboxes)):
+                text = f'cls: {i}' if class_names is None else class_names[i]
+                if with_score:
+                    text += f'|{cls_scores[j]:.02f}'
+                texts.append(text)
 
         draw_func(ax, cls_bboxes, texts, colors[i], thickness, font_size)
 

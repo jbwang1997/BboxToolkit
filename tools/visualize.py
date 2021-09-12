@@ -43,6 +43,8 @@ def parse_args():
                         help='the thickness for bboxes')
     parser.add_argument('--thickness', type=float, default=1.,
                         help='the thickness for bboxes')
+    parser.add_argument('--text_off', action='store_true',
+                        help='without text visualization')
     parser.add_argument('--font_size', type=float, default=10,
                         help='the thickness for font')
     parser.add_argument('--wait_time', type=int, default=0,
@@ -56,7 +58,7 @@ def parse_args():
 
 
 def single_vis(content, ids, img_dir, save_dir, class_names, score_thr, colors,
-               thickness, font_size, show_off, wait_time, lock, prog, total):
+               thickness, text_off, font_size, show_off, wait_time, lock, prog, total):
     if ids is not None and content['id'] not in ids:
         pass
     else:
@@ -78,6 +80,7 @@ def single_vis(content, ids, img_dir, save_dir, class_names, score_thr, colors,
                          score_thr=score_thr,
                          colors=colors,
                          thickness=thickness,
+                         with_text=(not text_off),
                          font_size=font_size,
                          show=(not show_off),
                          wait_time=wait_time,
@@ -119,6 +122,7 @@ def main():
                         score_thr=args.score_thr,
                         colors=args.colors,
                         thickness=args.thickness,
+                        text_off=args.text_off,
                         font_size=args.font_size,
                         show_off=args.show_off,
                         wait_time=args.wait_time,
