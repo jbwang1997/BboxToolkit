@@ -59,7 +59,7 @@ def imshow_bboxes(img,
         if scores is None:
             with_score = False
         else:
-            bboxes = np.concatenate([bboxes, scores], axis=1)
+            bboxes = np.concatenate([bboxes, scores[:, None]], axis=1)
             with_score = True
 
         if labels is None or labels.size == 0:
