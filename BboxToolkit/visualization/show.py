@@ -1,4 +1,5 @@
 import cv2
+import time
 import numpy as np
 import matplotlib.pyplot as plt
 
@@ -10,6 +11,8 @@ EPS = 1e-2
 
 
 def plt_init(win_name, width, height):
+    if win_name is None or win_name == '':
+        win_name = str(time.time())
     fig = plt.figure(win_name, frameon=False)
     plt.title(win_name)
     dpi = fig.get_dpi()
@@ -109,4 +112,5 @@ def imshow_bboxes(img,
     if out_file is not None:
         cv2.imwrite(out_file, drawed_img)
 
+    plt.close(fig)
     return drawed_img
