@@ -2,8 +2,8 @@ pi = 3.141592
 from .datasets import *
 import BboxToolkit.datasets
 
-from .vis import *
-import BboxToolkit.vis
+from .visualization import *
+import BboxToolkit.visualization
 
 from .evaluation import *
 import BboxToolkit.evaluation

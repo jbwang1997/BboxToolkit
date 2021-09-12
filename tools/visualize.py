@@ -5,7 +5,7 @@ import argparse
 import numpy as np
 
 from random import shuffle
-from multiprocessing import Pool
+from multiprocessing import Pool, Manager
 from functools import partial
 
 
@@ -39,13 +39,13 @@ def parse_args():
     # arguments for visualisation
     parser.add_argument('--score_thr', type=float, default=0.2,
                         help='the score threshold for bboxes')
-    parser.add_argument('--thickness', type=int, default=2,
+    parser.add_argument('--colors', type=str, default='green',
                         help='the thickness for bboxes')
-    parser.add_argument('--font_scale', type=float, default=1,
+    parser.add_argument('--thickness', type=float, default=1.,
+                        help='the thickness for bboxes')
+    parser.add_argument('--font_size', type=float, default=10,
                         help='the thickness for font')
     parser.add_argument('--wait_time', type=int, default=0,
-                        help='wait time for showing images')
-    parser.add_argument('--max_size', type=int, default=1000,
                         help='wait time for showing images')
     args = parser.parse_args()
     assert args.load_type is not None, "argument load_type can't be None"
@@ -55,35 +55,40 @@ def parse_args():
     return args
 
 
-def single_vis(content, ids, img_dir, save_dir, class_names, score_thr,
-               thickness, font_scale, show_off, wait_time, max_size):
+def single_vis(content, ids, img_dir, save_dir, class_names, score_thr, colors,
+               thickness, font_size, show_off, wait_time, lock, prog, total):
     if ids is not None and content['id'] not in ids:
-        return
-
-    imgpath = osp.join(img_dir, content['filename'])
-    out_file = osp.join(save_dir, content['filename']) \
-            if save_dir else None
-    if 'ann' in content:
-        ann = content['ann']
-        bboxes = ann['bboxes']
-        labels = ann['labels']
-        scores = ann.get('scores', None)
+        pass
     else:
-        bboxes = np.zeros((0, 4), dtype=np.float)
-        labels = np.zeros((0, ), dtype=np.int)
-        scores = None
+        imgpath = osp.join(img_dir, content['filename'])
+        out_file = osp.join(save_dir, content['filename']) \
+                if save_dir else None
+        if 'ann' in content:
+            ann = content['ann']
+            bboxes = ann['bboxes']
+            labels = ann['labels']
+            scores = ann.get('scores', None)
+        else:
+            bboxes = np.zeros((0, 4), dtype=np.float)
+            labels = np.zeros((0, ), dtype=np.int)
+            scores = None
 
-    print(imgpath)
-    bt.imshow_det_bboxes(imgpath, bboxes, labels,
-                         scores=scores,
+        bt.imshow_bboxes(imgpath, bboxes, labels, scores,
                          class_names=class_names,
                          score_thr=score_thr,
+                         colors=colors,
                          thickness=thickness,
-                         font_scale=font_scale,
+                         font_size=font_size,
                          show=(not show_off),
                          wait_time=wait_time,
-                         max_size=max_size,
                          out_file=out_file)
+
+    lock.acquire()
+    prog.value += 1
+    msg = f'({prog.value/total:3.1%} {prog.value}:{total})'
+    msg += ' - '  + f"Filename: {content['filename']}"
+    print(msg)
+    lock.release()
 
 
 def main():
@@ -105,17 +110,21 @@ def main():
     if args.save_dir and (not osp.exists(args.save_dir)):
         os.makedirs(args.save_dir)
 
+    manager = Manager()
     _vis_func = partial(single_vis,
                         ids=args.ids,
                         img_dir=args.img_dir,
                         save_dir=args.save_dir,
                         class_names=classes,
                         score_thr=args.score_thr,
+                        colors=args.colors,
                         thickness=args.thickness,
-                        font_scale=args.font_scale,
+                        font_size=args.font_size,
                         show_off=args.show_off,
                         wait_time=args.wait_time,
-                        max_size=args.max_size)
+                        lock=manager.Lock(),
+                        prog=manager.Value('i', 0),
+                        total=len(contents))
     if args.show_off and args.vis_nproc > 1:
         pool = Pool(args.vis_nproc)
         pool.map(_vis_func, contents)

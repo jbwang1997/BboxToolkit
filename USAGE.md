@@ -113,4 +113,23 @@ python --load_type dota --img_dir {image path} --ann_dir {annotation path} --sho
 python cal_mAP.py --img_dir {image path} --gt_type dota --gt_ann_dir {dota annotation path} --res_type dota_submission --res_ann_dir {dota submission} --iou_thr 0.5
 ```
 
-## To Be Contiune
+## Transform
+
+All transformation functions can be found at [here](BboxToolkit/transforms.py).
+
+It's very convenient to convert bbox type in BboxToolkit. If you know the exact type of bboxes and want convert it to another type (i.e., `hbb`, `obb`, `poly`),
+you can use the transformation functions which are named in a regular form `{START_BTYPE}2{END_BTYPE}` (e.g. `obb2hbb`, `poly2obb`, ...).
+
+If you are not sure of the bbox type, we also provide `bbox2type` which will automatically decide the bbox type be the ndarray shape and select correct transformation functions.
+
+example
+```shell
+# bboxes type: np.ndarray shape: n, 8
+# want to transform bboxes to obb
+
+import BboxToolkit as bt
+
+obbs = bt.poly2obb(bboxes)
+# or
+obbs = bt.bbox2type(bboxes, 'obb')
+```
