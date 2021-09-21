@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 
-from .utils import get_bbox_type
+from .utils import get_bbox_type, regular_obb
 from . import pi
 
 
@@ -15,11 +15,7 @@ def poly2obb(polys):
     obboxes = []
     for poly in polys:
         (x, y), (w, h), angle = cv2.minAreaRect(poly)
-        if w >= h:
-            angle = -angle
-        else:
-            w, h = h, w
-            angle = -90 - angle
+        angle = -angle
         theta = angle / 180 * pi
         obboxes.append([x, y, w, h, theta])
 
@@ -27,6 +23,7 @@ def poly2obb(polys):
         obboxes = np.zeros((0, 5), dtype=np.float32)
     else:
         obboxes = np.array(obboxes, dtype=np.float32)
+    obboxes = regular_obb(obboxes)
     return obboxes.reshape(*order, 5)
 
 
