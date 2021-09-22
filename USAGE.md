@@ -76,11 +76,13 @@ The `ori_annfile.pkl` saves the annotations of large images.
 
 - `--img_dir`, `--ann_dir`: The image and annotation files' path. 
 
-- `--show_off`: Shut sown the online visualization. Set as True when you need to save the visualized images.
+- `--show_off`: Shut down the online visualization. Set as True when you need to save the visualized images.
 
 - `--save_dir`: The path to save the visualized images.
 
 - `--score_thr`: The score threshold to filter the boxes with low confidence.
+
+- `--colors`: The colors of bboxes of different classes. It should be a string or a filepath. please refer [Visualization](##Visualzation) for details.
 
 **example**
 
@@ -133,3 +135,27 @@ obbs = bt.poly2obb(bboxes)
 # or
 obbs = bt.bbox2type(bboxes, 'obb')
 ```
+
+## Operations
+
+BboxToolkit provides some common opertaions in box. All functions can judge the type of bboxes by ndarry shape and do the right mannar.
+
+### [Geometry](BboxToolkit/geometry.py)
+
+`bbox_overlaps` can calculate IoUs or IoFs between two bboxes.
+
+`bbox_nms` do the NMS for all type of bboxes.
+
+`bbox_area_nms` use areas of bboxes to replace the score in NMS.
+
+### [Move](BboxToolkit/move.py)
+
+`translate` can translate bboxes.
+
+`flip` can flip bboxes.
+
+`warp` can warp bboxes. Used in affine transformation or project transformation.
+
+## Visualization
+
+to be continue
