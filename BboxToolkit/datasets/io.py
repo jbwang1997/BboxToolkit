@@ -44,7 +44,7 @@ def load_imgs(img_dir, ann_dir=None, classes=None, nproc=10,
 
 
 def load_pkl(ann_dir, img_dir=None, classes=None, nproc=10):
-    assert osp.isdir(ann_dir), f'The {ann_dir} is not an existing dir!'
+    assert osp.isfile(ann_dir), f'The {ann_dir} is not an existing pkl file!'
     assert img_dir is None or osp.isdir(img_dir), f'The {img_dir} is not an existing dir!'
 
     print('Starting loading pkl information')
