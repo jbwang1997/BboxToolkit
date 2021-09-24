@@ -27,7 +27,7 @@ def parse_args():
                         help='whether show images without objects')
     parser.add_argument('--random_vis', action='store_true',
                         help='whether to shuffle the order of images')
-    parser.add_argument('--ids', nargs='+', type=str, default=None,
+    parser.add_argument('--ids', type=str, default=None,
                         help='choice id to visualize')
     parser.add_argument('--show_off', action='store_true',
                         help='stop showing images')
@@ -105,6 +105,14 @@ def main():
         classes=args.classes,
         nproc=args.nproc)
 
+    if args.ids is None:
+        ids = None
+    elif osp.isfile(args.ids):
+        with open(args.ids, 'r') as f:
+            ids = [l.strip() for l in f]
+    else:
+        ids = args.ids.split('|')
+
     if args.skip_empty:
         contents = [content for content in contents
                     if content['ann']['bboxes'].size > 0]
@@ -115,7 +123,7 @@ def main():
 
     manager = Manager()
     _vis_func = partial(single_vis,
-                        ids=args.ids,
+                        ids=ids,
                         img_dir=args.img_dir,
                         save_dir=args.save_dir,
                         class_names=classes,
