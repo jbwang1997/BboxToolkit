@@ -1,6 +1,7 @@
 import numpy as np
 
 from .. import pi
+from ..utils import regular_obb
 
 from matplotlib.patches import Rectangle, Polygon
 from matplotlib.collections import PatchCollection
@@ -55,6 +56,7 @@ def draw_obb(ax,
     if texts is not None:
         assert len(texts) == len(bboxes)
 
+    bboxes = regular_obb(bboxes)
     ctr, w, h, t = np.split(bboxes, (2, 3, 4), axis=1)
     Cos, Sin = np.cos(t), np.sin(t)
     vec1 = np.concatenate(
