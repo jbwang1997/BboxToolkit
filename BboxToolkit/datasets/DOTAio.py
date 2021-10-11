@@ -136,7 +136,7 @@ def load_dota_submission(ann_dir, img_dir=None, classes=None, nproc=10):
         scores = np.concatenate(scores, axis=0)
         content['ann'] = dict(bboxes=bboxes, labels=labels, scores=scores)
     end_time = time.time()
-    print(f'Finishing loading DOTA submission, get{len(contents)} images,',
+    print(f'Finishing loading DOTA submission, get {len(contents)} images,',
           f'using {end_time-start_time:.3f}s.')
     return contents, classes
 

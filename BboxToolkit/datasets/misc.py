@@ -69,7 +69,8 @@ def get_classes(alias_or_list):
         for k, v in dataset_aliases.items():
             if alias_or_list in v:
                 return dataset_classes[k]
-        raise ValueError('Unrecognized alias: {}'.format(alias_or_list))
+
+        return alias_or_list.split('|')
 
     if isinstance(alias_or_list, (list, tuple)):
         classes = []

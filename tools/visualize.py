@@ -17,8 +17,8 @@ def parse_args():
     parser.add_argument('--img_dir', type=str, help='path to images')
     parser.add_argument('--ann_dir', type=str, default=None,
                         help='path to annotations')
-    parser.add_argument('--classes', nargs='+', type=str, default=None,
-                        help='the classes to visualize')
+    parser.add_argument('--classes', type=str, default=None,
+                        help='the classes to load, a filepath or class names joined by `|`')
     parser.add_argument('--nproc', type=int, default=10,
                         help='the procession number for loading data')
 
@@ -37,6 +37,8 @@ def parse_args():
                         help='the procession number for visualizing')
 
     # arguments for visualisation
+    parser.add_argument('--class_names', type=str, default=None,
+                        help='class names shown in picture')
     parser.add_argument('--score_thr', type=float, default=0.2,
                         help='the score threshold for bboxes')
     parser.add_argument('--colors', type=str, default='green',
@@ -105,6 +107,10 @@ def main():
         classes=args.classes,
         nproc=args.nproc)
 
+    class_names = classes if args.class_names is None \
+            else bt.get_classes(args.class_names)
+    assert len(class_names) == len(classes)
+
     if args.ids is None:
         ids = None
     elif osp.isfile(args.ids):
@@ -126,7 +132,7 @@ def main():
                         ids=ids,
                         img_dir=args.img_dir,
                         save_dir=args.save_dir,
-                        class_names=classes,
+                        class_names=class_names,
                         score_thr=args.score_thr,
                         colors=args.colors,
                         thickness=args.thickness,
