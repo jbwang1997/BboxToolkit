@@ -40,7 +40,6 @@ def imshow_bboxes(img,
                   labels=None,
                   scores=None,
                   class_names=None,
-                  score_thr=0,
                   colors='green',
                   thickness=1,
                   with_text=True,
@@ -70,13 +69,10 @@ def imshow_bboxes(img,
         else:
             bboxes = [bboxes[labels == i] for i in range(labels.max()+1)]
 
-    if colors == 'random':
-        colors = random_colors(len(bboxes))
-    else:
-        colors = colors_val(colors)
-        if len(colors) == 1:
-            colors = colors * len(bboxes)
-        assert len(colors) >= len(bboxes)
+    colors = colors_val(colors)
+    if len(colors) == 1:
+        colors = colors * len(bboxes)
+    assert len(colors) >= len(bboxes)
 
     draw_func = choice_by_type(
         draw_hbb, draw_obb, draw_poly, bboxes[0], with_score)
@@ -87,7 +83,6 @@ def imshow_bboxes(img,
 
     for i, cls_bboxes in enumerate(bboxes):
         if with_score:
-            cls_bboxes = cls_bboxes[cls_bboxes[:, -1] > score_thr]
             cls_bboxes, cls_scores = cls_bboxes[:, :-1], cls_bboxes[:, -1]
 
         if not with_text:

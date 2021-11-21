@@ -1,0 +1,25 @@
+{
+    "load_type": "dota_submission",
+    "img_dir": "path/to/dota/submission/image",
+    "ann_dir": "path/to/dota/submission/labelTxt",
+    "classes": null,
+    "prior_annfile": null,
+    "merge_type": "addition",
+    "load_nproc": 10,
+
+    "skip_empty": false,
+    "random_vis": false,
+    "ids": null,
+    "show_off": false,
+    "save_dir": null,
+    "vis_nproc": 10,
+
+    "shown_btype": null,
+    "shown_names": null,
+    "score_thr": 0.2,
+    "colors": "green",
+    "thickness": 1.0,
+    "text_off": false,
+    "font_size": 10,
+    "wait_time": 0
+}

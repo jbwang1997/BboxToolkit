@@ -72,6 +72,8 @@ The `ori_annfile.pkl` saves the annotations of large images.
 
 **important arguments**
 
+- `--base_json`: Loads arguments from a json file. We have some default json files in `vis_configs`.
+
 - `--load_type`: Decide the loading function. Same as the `--load_type` arugments in img_split.py
 
 - `--img_dir`, `--ann_dir`: The image and annotation files' path. 
@@ -87,12 +89,21 @@ The `ori_annfile.pkl` saves the annotations of large images.
 **example**
 
 ```shell
-# visualize the detection result on DOTA dataset
-python --load_type dota_submission --img_dir {image path} --ann_dir {annotation path} --score_thr 0.3
+# load json config 
+# first you need to change the arguments in json for your occasion
+python visualize.py --base_json vis_configs/show_online.json
+python visualize.py --base_json vis_configs/show_saving.json
 
-# visualize and save the DOTA dataset
-python --load_type dota --img_dir {image path} --ann_dir {annotation path} --show_off --save_dir {saving path}
+# or you can directly specify arguments in the command.
+python visualize.py --load_type dota_submission --img_dir {image path} --ann_dir {annotation path} --score_thr 0.3
 ```
+
+**note**: 
+
+- If your want different colors for different classes, you can modify the `colors` in json or command. `colors` recives a filepath or str of colors splitting by `|`.
+
+- In json, we only show the `dota_submission` case, which can visualize the detection results on dota. For other cases, you can change load_type to visualize datasets or splitted `.pkl`.
+
 ### cal_mAP
 
 [cal_mAP.py](tools/cal_mAP.py) is used to calculate the mAP. 
