@@ -29,6 +29,10 @@ dataset_classes = {
              'stadium', 'storagetank', 'tenniscourt', 'trainstation', 'vehicle',
              'windmill'),
     'HRSC': ('ship', ),
+    'HRSC_cls': ('01', '02', '03', '04', '05', '06', '07', '08', '09', '10',
+                 '11', '12', '13', '14', '15', '16', '17', '18', '19', '20',
+                 '21', '22', '23', '24', '25', '26', '27', '28', '29', '30',
+                 '31', '32', '33'),
     'MSRA_TD500': ('text', ),
     'RCTW_17': ('text', ),
 }
@@ -39,6 +43,7 @@ dataset_aliases = {
     'DOTA2_0': product(['dota', 'DOTA'], ['2', '2.0', '2_0']),
     'DIOR': ['dior', 'DIOR'],
     'HRSC': product(['hrsc', 'HRSC'], ['', '2016']),
+    'HRSC_cls': product(['hrsc', 'HRSC'], ['_cls', '2016_cls']),
     'MSRA_TD500': ['msra_td500', 'MSRA_TD500', 'msra-td500', 'MSRA-TD500'],
     'RCTW_17': ['rctw_17', 'RCTW_17', 'rctw-17', 'RCTW-17'],
 }
@@ -162,3 +167,15 @@ def split_imgset(contents, imgset):
 
         imgset_contents.append(contents[id_mapper[img_id]])
     return imgset_contents
+
+
+class _ConstMapper:
+
+    def __init__(self, const_value):
+        self.const_value = const_value
+
+    def __getitem__(self, key):
+        return self.const_value
+
+    def __contains__(self, key):
+        return True

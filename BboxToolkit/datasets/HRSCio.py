@@ -7,15 +7,25 @@ import numpy as np
 from PIL import Image
 from functools import partial
 from multiprocessing import Pool
-from .misc import img_exts
+from .misc import img_exts, get_classes, _ConstMapper
 
 
-def load_hrsc(img_dir, ann_dir, classes=None, img_keys=dict(),
-              obj_keys=dict(), nproc=10):
-    if classes is not None:
-        print('load_hrsc loads all objects as ship, arguments classes is no use')
+def load_hrsc(img_dir, ann_dir, classes=None, img_keys=None, obj_keys=None, nproc=10):
     assert osp.isdir(img_dir), f'The {img_dir} is not an existing dir!'
     assert ann_dir is None or osp.isdir(ann_dir), f'The {ann_dir} is not an existing dir!'
+
+    classes = get_classes('HRSC' if classes is None else classes)
+    if (len(classes) == 1) and (classes[0] == 'ship'):
+        cls2lbl = _ConstMapper(0)
+    else:
+        cls2lbl = dict()
+        for i, cls in enumerate(classes):
+            if len(cls) < 9:
+                cls = '1' + '0' * (8 - len(cls)) + cls
+            cls2lbl[cls] = i
+
+    img_keys = dict() if img_keys is None else img_keys
+    obj_keys = dict() if obj_keys is None else obj_keys
 
     contents = []
     print('Starting loading HRSC dataset information.')
@@ -24,7 +34,8 @@ def load_hrsc(img_dir, ann_dir, classes=None, img_keys=dict(),
                          img_dir=img_dir,
                          ann_dir=ann_dir,
                          img_keys=img_keys,
-                         obj_keys=obj_keys)
+                         obj_keys=obj_keys,
+                         cls2lbl=cls2lbl)
     if nproc > 1:
         pool = Pool(nproc)
         contents = pool.map(_load_func, os.listdir(img_dir))
@@ -38,13 +49,13 @@ def load_hrsc(img_dir, ann_dir, classes=None, img_keys=dict(),
     return contents, ['ship']
 
 
-def _load_hrsc_single(imgfile, img_dir, ann_dir, img_keys, obj_keys):
+def _load_hrsc_single(imgfile, img_dir, ann_dir, img_keys, obj_keys, cls2lbl):
     img_id, ext = osp.splitext(imgfile)
     if ext not in img_exts:
         return None
 
     xmlfile = None if ann_dir is None else osp.join(ann_dir, img_id+'.xml')
-    content = _load_hrsc_xml(xmlfile, img_keys, obj_keys)
+    content = _load_hrsc_xml(xmlfile, img_keys, obj_keys, cls2lbl)
 
     if not ('width' in content and 'height' in content):
         imgpath = osp.join(img_dir, imgfile)
@@ -54,8 +65,8 @@ def _load_hrsc_single(imgfile, img_dir, ann_dir, img_keys, obj_keys):
     return content
 
 
-def _load_hrsc_xml(xmlfile, img_keys=dict(), obj_keys=dict()):
-    hbboxes, bboxes, diffs = list(), list(), list()
+def _load_hrsc_xml(xmlfile, img_keys, obj_keys, cls2lbl):
+    hbboxes, bboxes, labels, diffs = list(), list(), list(), list()
     content = {k: None for k in img_keys}
     ann = {k: [] for k in obj_keys}
     if xmlfile is None:
@@ -75,6 +86,11 @@ def _load_hrsc_xml(xmlfile, img_keys=dict(), obj_keys=dict()):
 
         objects = root.find('HRSC_Objects')
         for obj in objects.findall('HRSC_Object'):
+            cls = obj.find('Class_ID').text
+            if cls not in cls2lbl:
+                continue
+
+            labels.append(cls2lbl[cls])
             hbboxes.append([
                 float(obj.find('box_xmin').text),
                 float(obj.find('box_ymin').text),
@@ -100,13 +116,14 @@ def _load_hrsc_xml(xmlfile, img_keys=dict(), obj_keys=dict()):
             else np.zeros((0, 4), dtype=np.float32)
     bboxes = np.array(bboxes, dtype=np.float32) if bboxes \
             else np.zeros((0, 5), dtype=np.float32)
+    labels = np.array(labels, dtype=np.int64) if diffs \
+            else np.zeros((0, ), dtype=np.int64)
     diffs = np.array(diffs, dtype=np.int64) if diffs \
             else np.zeros((0, ), dtype=np.int64)
-    labels = np.zeros((bboxes.shape[0], ), dtype=np.int64)
 
     ann['hbboxes'] = hbboxes
     ann['bboxes'] = bboxes
-    ann['diffs'] = diffs
     ann['labels'] = labels
+    ann['diffs'] = diffs
     content['ann'] = ann
     return content
