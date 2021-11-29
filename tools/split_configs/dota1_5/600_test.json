@@ -1,11 +1,11 @@
 {
     "nproc": 10,
-    "load_type": "dota1.5",
+    "load_type": "dota",
     "img_dirs": [
         "data/DOTA1_5/test/images/"
     ],
     "ann_dirs": null,
-    "classes": null,
+    "classes": "dota1.5",
     "prior_annfile": null,
     "merge_type": "addition",
     "sizes": [

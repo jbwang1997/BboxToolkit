@@ -1,13 +1,13 @@
 {
     "nproc": 10,
-    "load_type": "dota2",
+    "load_type": "dota",
     "img_dirs": [
         "data/DOTA2_0/train/images/"
     ],
     "ann_dirs": [
         "data/DOTA2_0/train/labelTxt/"
     ],
-    "classes": null,
+    "classes": "dota2.0",
     "prior_annfile": null,
     "merge_type": "addition",
     "sizes": [
