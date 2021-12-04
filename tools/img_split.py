@@ -49,11 +49,13 @@ def add_parser(parser):
     parser.add_argument('--iof_thr', type=float, default=0.7,
                         help='the minimal iof between a object and a window')
     parser.add_argument('--no_padding', action='store_true',
-                        help='not padding patches in regular size')
+                        help='not padding patches to regular size')
     parser.add_argument('--padding_value', nargs='+',type=int, default=[0],
                         help='padding value, 1 or channel number')
 
     #argument for saving
+    parser.add_argument('--filter_empty', action='store_true',
+                        help='filter out empty patches, speed up trining splitting')
     parser.add_argument('--save_dir', type=str, default='.',
                         help='to save pkl and splitted images')
     parser.add_argument('--save_ext', type=str, default='.png',
@@ -151,10 +153,14 @@ def get_window_obj(info, windows, iof_thr):
 
 
 def crop_and_save_img(info, windows, window_anns, img_dir, no_padding,
-                      padding_value, save_dir, img_ext):
+                      padding_value, filter_empty, save_dir, img_ext):
     img = cv2.imread(osp.join(img_dir, info['filename']))
     patch_infos = []
     for i in range(windows.shape[0]):
+        ann = window_anns[i]
+        if filter_empty and (ann['bboxes'].size == 0):
+            continue
+
         patch_info = dict()
         for k, v in info.items():
             if k not in ['id', 'fileanme', 'width', 'height', 'ann']:
@@ -162,14 +168,12 @@ def crop_and_save_img(info, windows, window_anns, img_dir, no_padding,
 
         window = windows[i]
         x_start, y_start, x_stop, y_stop = window.tolist()
+        ann['bboxes'] = bt.translate(ann['bboxes'], -x_start, -y_start)
+        patch_info['ann'] = ann
         patch_info['x_start'] = x_start
         patch_info['y_start'] = y_start
         patch_info['id'] = info['id'] + f'_{i:04d}'
         patch_info['ori_id'] = info['id']
-
-        ann = window_anns[i]
-        ann['bboxes'] = bt.translate(ann['bboxes'], -x_start, -y_start)
-        patch_info['ann'] = ann
 
         patch = img[y_start:y_stop, x_start:x_stop]
         if not no_padding:
@@ -194,13 +198,14 @@ def crop_and_save_img(info, windows, window_anns, img_dir, no_padding,
 
 
 def single_split(arguments, sizes, gaps, img_rate_thr, iof_thr, no_padding,
-                 padding_value, save_dir, img_ext, lock, prog, total, logger):
+                 padding_value, filter_empty, save_dir, img_ext, lock,
+                 prog, total, logger):
     info, img_dir = arguments
     windows = get_sliding_window(info, sizes, gaps, img_rate_thr)
     window_anns = get_window_obj(info, windows, iof_thr)
-    patch_infos = crop_and_save_img(info, windows, window_anns, img_dir,
-                                    no_padding, padding_value, save_dir, img_ext)
-    assert patch_infos
+    patch_infos = crop_and_save_img(info, windows, window_anns, img_dir, no_padding,
+                                    padding_value, filter_empty, save_dir, img_ext)
+    assert patch_infos or (filter_empty and info['ann']['bboxes'].size == 0)
 
     lock.acquire()
     prog.value += 1
@@ -209,6 +214,7 @@ def single_split(arguments, sizes, gaps, img_rate_thr, iof_thr, no_padding,
     msg += ' - ' + f"width: {info['width']:<5d}"
     msg += ' - ' + f"height: {info['height']:<5d}"
     msg += ' - ' + f"Objects: {len(info['ann']['bboxes']):<5d}"
+    msg += ' - ' + f"Windows: {windows.shape[0]:<5d}"
     msg += ' - ' + f"Patches: {len(patch_infos)}"
     logger.info(msg)
     lock.release()
@@ -277,6 +283,7 @@ def main():
                      iof_thr=args.iof_thr,
                      no_padding=args.no_padding,
                      padding_value=padding_value,
+                     filter_empty=args.filter_empty,
                      save_dir=save_imgs,
                      img_ext=args.save_ext,
                      lock=manager.Lock(),

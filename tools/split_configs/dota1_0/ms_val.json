@@ -25,6 +25,7 @@
     "padding_value": [
         104, 116, 124
     ],
+    "filter_empty": false,
     "save_dir": "data/split_ms_dota1_0/val/",
     "save_ext": ".png"
 }

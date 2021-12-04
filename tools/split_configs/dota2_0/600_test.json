@@ -23,6 +23,7 @@
     "padding_value": [
         104, 116, 124
     ],
+    "filter_empty": false,
     "save_dir": "data/split_600_dota2_0/test/",
     "save_ext": ".png"
 }

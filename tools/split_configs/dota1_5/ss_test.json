@@ -23,6 +23,7 @@
     "padding_value": [
         104, 116, 124
     ],
+    "filter_empty": false,
     "save_dir": "data/split_ss_dota1_5/test/",
     "save_ext": ".png"
 }
