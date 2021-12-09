@@ -30,8 +30,8 @@ def add_parser(parser):
                         help='images dirs, must give a value')
     parser.add_argument('--ann_dirs', nargs='+', type=str, default=None,
                         help='annotations dirs, optional')
-    parser.add_argument('--classes', nargs='+', type=str, default=None,
-                        help='the classes and order for loading data')
+    parser.add_argument('--classes', type=str, default=None,
+                        help='the classes for loading data')
     parser.add_argument('--prior_annfile', type=str, default=None,
                         help='prior annotations merge to data')
     parser.add_argument('--merge_type', type=str, default='addition',
@@ -62,6 +62,16 @@ def add_parser(parser):
                         help='the extension of saving images')
 
 
+def abspath(path):
+    if isinstance(path, (list, tuple)):
+        return type(path)([abspath(p) for p in path])
+    if path is None:
+        return path
+    if isinstance(path, str):
+        return osp.abspath(path)
+    raise TypeError('Invalid path type.')
+
+
 def parse_args():
     parser = argparse.ArgumentParser(description='Splitting images')
     add_parser(parser)
@@ -81,8 +91,13 @@ def parse_args():
     # assert arguments
     assert args.load_type is not None, "argument load_type can't be None"
     assert args.img_dirs is not None, "argument img_dirs can't be None"
+    args.img_dirs = abspath(args.img_dirs)
     assert args.ann_dirs is None or len(args.ann_dirs) == len(args.img_dirs)
+    args.ann_dirs = abspath(args.ann_dirs)
+    if args.classes is not None and osp.isfile(args.classes):
+        args.classes = abspath(args.classes)
     assert args.prior_annfile is None or args.prior_annfile.endswith('.pkl')
+    args.prior_annfile = abspath(args.prior_annfile)
     assert args.merge_type in ['addition', 'replace']
     assert len(args.sizes) == len(args.gaps)
     assert len(args.sizes) == 1 or len(args.rates) == 1
@@ -91,6 +106,7 @@ def parse_args():
     assert args.iof_thr >= 0 and args.iof_thr <= 1
     assert not osp.exists(args.save_dir), \
             f'{osp.join(args.save_dir)} already exists'
+    args.save_dir = abspath(args.save_dir)
     return args
 
 

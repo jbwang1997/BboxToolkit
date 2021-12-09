@@ -72,7 +72,7 @@ def single_color_val(color):
     '''
     # Convert Iterable, int, float to list.
     if isinstance(color, str):
-        color = color.split('$')[0]
+        color = color.split('$')[0].strip(' ')
     elif isinstance(color, Iterable):
         color = [c/255 if isinstance(c, int) else c for c in color]
     elif isinstance(color, int):

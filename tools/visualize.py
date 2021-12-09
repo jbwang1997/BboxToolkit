@@ -4,6 +4,7 @@ import json
 import os.path as osp
 import argparse
 import numpy as np
+import pdb
 
 from random import shuffle
 from multiprocessing import Pool, Manager
@@ -52,7 +53,7 @@ def add_parser(parser):
                         help='the score threshold for bboxes')
     parser.add_argument('--colors', type=str, default='green',
                         help='the thickness for bboxes')
-    parser.add_argument('--thickness', type=float, default=1.,
+    parser.add_argument('--thickness', type=float, default=2.,
                         help='the thickness for bboxes')
     parser.add_argument('--text_off', action='store_true',
                         help='without text visualization')
@@ -60,6 +61,16 @@ def add_parser(parser):
                         help='the thickness for font')
     parser.add_argument('--wait_time', type=int, default=0,
                         help='wait time for showing images')
+
+
+def abspath(path):
+    if isinstance(path, (list, tuple)):
+        return type(path)([abspath(p) for p in path])
+    if path is None:
+        return path
+    if isinstance(path, str):
+        return osp.abspath(path)
+    raise TypeError('Invalid path type.')
 
 
 def parse_args():
@@ -81,10 +92,21 @@ def parse_args():
     # assert arguments
     assert args.load_type is not None, "argument load_type can't be None"
     assert args.img_dir is not None, "argument img_dir can't be None"
+    args.img_dir = abspath(args.img_dir)
+    args.ann_dir = abspath(args.ann_dir)
+    if args.classes is not None and osp.isfile(args.classes):
+        args.classes = abspath(args.classes)
     assert args.prior_annfile is None or args.prior_annfile.endswith('.pkl')
+    args.prior_annfile = abspath(args.prior_annfile)
+    args.ids = abspath(args.ids)
     assert args.merge_type in ['addition', 'replace']
     assert args.save_dir or (not args.show_off)
+    args.save_dir = abspath(args.save_dir)
     assert args.shown_btype in [None, 'hbb', 'obb', 'poly']
+    if args.shown_names is not None and osp.isfile(args.shown_names):
+        args.shown_names = abspath(args.shown_names)
+    if args.colors is not None and osp.isfile(args.colors):
+        args.colors = abspath(args.colors)
     return args
 
 
@@ -126,6 +148,7 @@ def main():
 
     shown_names = classes if args.shown_names is None \
             else bt.get_classes(args.shown_names)
+    pdb.set_trace()
     assert len(shown_names) == len(classes)
 
     if isinstance(args.ids, (list, type(None))):

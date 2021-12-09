@@ -91,8 +91,7 @@ The `ori_annfile.pkl` saves the annotations of large images.
 ```shell
 # load json config 
 # first you need to change the arguments in json for your occasion
-python visualize.py --base_json vis_configs/show_online.json
-python visualize.py --base_json vis_configs/show_saving.json
+python visualize.py --base_json vis_configs/dota1_0/config.json
 
 # or you can directly specify arguments in the command.
 python visualize.py --load_type dota_submission --img_dir {image path} --ann_dir {annotation path} --score_thr 0.3
