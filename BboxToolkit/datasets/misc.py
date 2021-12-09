@@ -35,6 +35,9 @@ dataset_classes = {
                  '31', '32', '33'),
     'MSRA_TD500': ('text', ),
     'RCTW_17': ('text', ),
+    'VOC': ('person', 'bird', 'cat', 'cow', 'dog', 'horse', 'sheep', 'aeroplane',
+            'bicycle', 'boat', 'bus', 'car', 'motorbike', 'train', 'bottle',
+            'chair', 'diningtable', 'pottedplant', 'sofa', 'tvmonitor'),
 }
 
 dataset_aliases = {
@@ -46,6 +49,7 @@ dataset_aliases = {
     'HRSC_cls': product(['hrsc', 'HRSC'], ['_cls', '2016_cls']),
     'MSRA_TD500': ['msra_td500', 'MSRA_TD500', 'msra-td500', 'MSRA-TD500'],
     'RCTW_17': ['rctw_17', 'RCTW_17', 'rctw-17', 'RCTW-17'],
+    'VOC': ['VOC', 'voc'],
 }
 
 img_exts = ['.jpg', '.JPG', '.png', '.tif', '.bmp']

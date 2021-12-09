@@ -101,7 +101,7 @@ def parse_args():
     assert args.merge_type in ['addition', 'replace']
     assert len(args.sizes) == len(args.gaps)
     assert len(args.sizes) == 1 or len(args.rates) == 1
-    assert args.save_ext in ['.png', '.jpg', 'bmp', '.tif']
+    assert args.save_ext in bt.img_exts
     assert args.iof_thr >= 0 and args.iof_thr < 1
     assert args.iof_thr >= 0 and args.iof_thr <= 1
     assert not osp.exists(args.save_dir), \

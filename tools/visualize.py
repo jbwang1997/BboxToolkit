@@ -4,7 +4,6 @@ import json
 import os.path as osp
 import argparse
 import numpy as np
-import pdb
 
 from random import shuffle
 from multiprocessing import Pool, Manager
@@ -148,7 +147,6 @@ def main():
 
     shown_names = classes if args.shown_names is None \
             else bt.get_classes(args.shown_names)
-    pdb.set_trace()
     assert len(shown_names) == len(classes)
 
     if isinstance(args.ids, (list, type(None))):
