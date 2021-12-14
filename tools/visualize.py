@@ -184,7 +184,7 @@ def main():
             scores = scores[scores > args.score_thr]
 
         if args.skip_empty and bboxes.size == 0:
-            pass
+            continue
 
         if labels.size > 0:
             max_label = max(max_label, labels.max())
