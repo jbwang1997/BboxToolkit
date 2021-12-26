@@ -15,12 +15,14 @@ from math import ceil
 from functools import partial, reduce
 from multiprocessing import Pool, Manager
 
+cv2.setNumThreads(1)
+
 
 def add_parser(parser):
     #argument for processing
     parser.add_argument('--base_json', type=str, default=None,
                         help='json config file for split images')
-    parser.add_argument('--nproc', type=int, default=10,
+    parser.add_argument('--nproc', type=int, default=20,
                         help='the procession number')
 
     #argument for loading data
@@ -104,8 +106,8 @@ def parse_args():
     assert args.save_ext in bt.img_exts
     assert args.iof_thr >= 0 and args.iof_thr < 1
     assert args.iof_thr >= 0 and args.iof_thr <= 1
-    assert not osp.exists(args.save_dir), \
-            f'{osp.join(args.save_dir)} already exists'
+    # assert not osp.exists(args.save_dir), \
+            # f'{osp.join(args.save_dir)} already exists'
     args.save_dir = abspath(args.save_dir)
     return args
 
@@ -316,14 +318,16 @@ def main():
 
     patch_infos = reduce(lambda x, y: x+y, patch_infos)
     stop = time.time()
-    print(f'Finish splitting images in {int(stop - start)} second!!!')
-    print(f'Total images number: {len(patch_infos)}')
+    logger.info(f'Finish splitting images in {int(stop - start)} second!!!')
+    logger.info(f'Total images number: {len(patch_infos)}')
 
     print('Save information of splitted dataset!!!')
     arg_dict = vars(args)
     arg_dict.pop('base_json', None)
     with open(osp.join(save_files, 'split_config.json'), 'w') as f:
         json.dump(arg_dict, f, indent=4)
+        json_str = json.dumps(arg_dict, indent=4)
+        logger.info(json_str)
     bt.save_pkl(osp.join(save_files, 'ori_annfile.pkl'), infos, classes)
     bt.save_pkl(osp.join(save_files, 'patch_annfile.pkl'), patch_infos, classes)
 
