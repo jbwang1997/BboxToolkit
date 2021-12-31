@@ -4,6 +4,7 @@ import json
 import os.path as osp
 import argparse
 import numpy as np
+import matplotlib.pyplot as plt
 
 from random import shuffle
 from multiprocessing import Pool, Manager
@@ -198,6 +199,9 @@ def main():
 
     if args.save_dir and (not osp.exists(args.save_dir)):
         os.makedirs(args.save_dir)
+
+    if args.show_off:
+        plt.switch_backend('Agg')
 
     manager = Manager()
     _vis_func = partial(single_vis,
