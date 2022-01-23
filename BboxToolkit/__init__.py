@@ -14,3 +14,4 @@ from .transforms import (poly2hbb, poly2obb, rectpoly2obb, obb2poly, obb2hbb,
                          hbb2poly, hbb2obb, bbox2type)
 from .geometry import bbox_overlaps, bbox_areas, bbox_nms
 from .move import translate, flip, warp
+from .imagesize import imsize

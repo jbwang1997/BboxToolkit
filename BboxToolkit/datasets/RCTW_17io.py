@@ -5,12 +5,12 @@ import zipfile
 import numpy as np
 import os.path as osp
 
-from PIL import Image
 from functools import partial
 from multiprocessing import Pool
 
 from .io import load_imgs
 from .misc import img_exts
+from ..imagesize import imsize
 from ..geometry import bbox_areas
 from ..transforms import bbox2type
 
@@ -46,7 +46,7 @@ def _load_rctw_17_single(imgfile, img_dir, ann_dir):
     content = _load_rctw_17_txt(txtfile)
 
     imgfile = osp.join(img_dir, imgfile)
-    width, height = Image.open(imgfile).size
+    width, height = imsize(imgfile)
     content.update(dict(width=width, height=height, filename=imgfile, id=img_id))
     return content
 

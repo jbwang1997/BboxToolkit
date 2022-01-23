@@ -6,13 +6,13 @@ import zipfile
 import os.path as osp
 import numpy as np
 
-from PIL import Image
 from functools import reduce, partial
 from multiprocessing import Pool
 from collections import defaultdict
 
 from .io import load_imgs
 from .misc import get_classes, img_exts
+from ..imagesize import imsize
 from ..utils import get_bbox_type
 from ..transforms import bbox2type
 
@@ -37,7 +37,7 @@ def load_dota(img_dir, ann_dir=None, classes=None, nproc=10):
         contents = list(map(_load_func, os.listdir(img_dir)))
     contents = [c for c in contents if c is not None]
     end_time = time.time()
-    print(f'Finishing loading DOTA, get {len(contents)} iamges,',
+    print(f'Finishing loading DOTA, get {len(contents)} images,',
           f'using {end_time-start_time:.3f}s.')
 
     return contents, classes
@@ -49,11 +49,11 @@ def _load_dota_single(imgfile, img_dir, ann_dir, cls2lbl):
         return None
 
     imgpath = osp.join(img_dir, imgfile)
-    size = Image.open(imgpath).size
+    width, height = imsize(imgpath)
     txtfile = None if ann_dir is None else osp.join(ann_dir, img_id+'.txt')
     content = _load_dota_txt(txtfile, cls2lbl)
 
-    content.update(dict(width=size[0], height=size[1], filename=imgfile, id=img_id))
+    content.update(dict(width=width, height=height, filename=imgfile, id=img_id))
     return content
 
 

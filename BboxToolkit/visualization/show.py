@@ -39,6 +39,7 @@ def imshow_bboxes(img,
                   bboxes,
                   labels=None,
                   scores=None,
+                  segms=None,
                   class_names=None,
                   colors='green',
                   thickness=1,
@@ -55,7 +56,7 @@ def imshow_bboxes(img,
     img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
     if isinstance(bboxes, list):
-        assert labels is None and scores is None
+        assert labels is None and scores is None and segms is None
         with_score = True
     else:
         if scores is None:
@@ -66,8 +67,12 @@ def imshow_bboxes(img,
 
         if labels is None or labels.size == 0:
             bboxes = [bboxes]
+            if segms is not None:
+                segms = [segms]
         else:
             bboxes = [bboxes[labels == i] for i in range(labels.max()+1)]
+            if segms is not None:
+                segms = [segms[labels == i] for i in range(labels.max()+1)]
 
     colors = colors_val(colors)
     if len(colors) == 1:
@@ -79,8 +84,16 @@ def imshow_bboxes(img,
 
     height, width = img.shape[:2]
     ax, fig = plt_init(win_name, width, height)
-    plt.imshow(img)
 
+    if segms is not None:
+        for i, cls_segms in enumerate(segms):
+            color = np.array(colors[i])
+            color = (255 * color).astype(np.uint8)
+            for segm in cls_segms:
+                mask = segm.astype(bool)
+                img[mask] = img[mask] * 0.5 + color * 0.5
+
+    plt.imshow(img)
     for i, cls_bboxes in enumerate(bboxes):
         if with_score:
             cls_bboxes, cls_scores = cls_bboxes[:, :-1], cls_bboxes[:, -1]

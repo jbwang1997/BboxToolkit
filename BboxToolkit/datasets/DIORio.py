@@ -4,11 +4,11 @@ import os.path as osp
 import xml.etree.ElementTree as ET
 import numpy as np
 
-from PIL import Image
 from multiprocessing import Pool
 from functools import partial
 
 from .misc import get_classes, img_exts
+from ..imagesize import imsize
 from ..transforms import bbox2type
 
 
@@ -61,8 +61,8 @@ def _load_dior_single(imgfile, img_dir, ann_dir, cls2lbl, xmltype):
 
     if not ('width' in content and 'height' in content):
         imgpath = osp.join(img_dir, imgfile)
-        size = Image.open(imgpath).size
-        content.update(dict(width=size[0], height=size[1]))
+        width, height = imsize(imgpath)
+        content.update(dict(width=width, height=height))
     content.update(dict(filename=imgfile, id=img_id))
     return content
 

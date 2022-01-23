@@ -4,10 +4,11 @@ import os.path as osp
 import xml.etree.ElementTree as ET
 import numpy as np
 
-from PIL import Image
 from functools import partial
 from multiprocessing import Pool
+
 from .misc import img_exts, get_classes, _ConstMapper
+from ..imagesize import imsize
 
 
 def load_hrsc(img_dir, ann_dir, classes=None, img_keys=None, obj_keys=None, nproc=10):
@@ -59,8 +60,8 @@ def _load_hrsc_single(imgfile, img_dir, ann_dir, img_keys, obj_keys, cls2lbl):
 
     if not ('width' in content and 'height' in content):
         imgpath = osp.join(img_dir, imgfile)
-        size = Image.open(imgpath).size
-        content.update(dict(width=size[0], height=size[1]))
+        width, height = imsize(imgpath)
+        content.update(dict(width=width, height=height))
     content.update(dict(filename=imgfile, id=img_id))
     return content
 
