@@ -34,6 +34,7 @@ dataset_classes = {
                  '21', '22', '23', '24', '25', '26', '27', '28', '29', '30',
                  '31', '32', '33'),
     'MSRA_TD500': ('text', ),
+    'HUST_TR400': ('text', ),
     'RCTW_17': ('text', ),
     'VOC': ('person', 'bird', 'cat', 'cow', 'dog', 'horse', 'sheep', 'aeroplane',
             'bicycle', 'boat', 'bus', 'car', 'motorbike', 'train', 'bottle',
@@ -48,6 +49,7 @@ dataset_aliases = {
     'HRSC': product(['hrsc', 'HRSC'], ['', '2016']),
     'HRSC_cls': product(['hrsc', 'HRSC'], ['_cls', '2016_cls']),
     'MSRA_TD500': ['msra_td500', 'MSRA_TD500', 'msra-td500', 'MSRA-TD500'],
+    'HUST_TR400': ['hust_tr500', 'HUST_TR400', 'hust-tr400', 'HUST-TR400'],
     'RCTW_17': ['rctw_17', 'RCTW_17', 'rctw-17', 'RCTW-17'],
     'VOC': ['VOC', 'voc'],
 }
