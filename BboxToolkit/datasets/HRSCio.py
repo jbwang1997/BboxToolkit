@@ -5,9 +5,7 @@ import xml.etree.ElementTree as ET
 import numpy as np
 
 from functools import partial
-from multiprocessing import Pool
-
-from .misc import img_exts, get_classes, _ConstMapper
+from .misc import img_exts, get_classes, _ConstMapper, prog_map
 from ..imagesize import imsize
 
 
@@ -37,13 +35,8 @@ def load_hrsc(img_dir, ann_dir, classes=None, img_keys=None, obj_keys=None, npro
                          img_keys=img_keys,
                          obj_keys=obj_keys,
                          cls2lbl=cls2lbl)
-    if nproc > 1:
-        pool = Pool(nproc)
-        contents = pool.map(_load_func, os.listdir(img_dir))
-        pool.close()
-    else:
-        contents = list(map(_load_func, os.listdir(img_dir)))
-    contents = [c for c in contents if c is not None]
+    img_list = os.listdir(img_dir)
+    contents = prog_map(_load_func, img_list, nproc)
     end_time = time.time()
     print(f'Finishing loading HRSC, get {len(contents)} images,',
           f'using {end_time-start_time:.3f}s.')

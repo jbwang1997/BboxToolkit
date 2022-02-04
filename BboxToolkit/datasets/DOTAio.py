@@ -7,11 +7,10 @@ import os.path as osp
 import numpy as np
 
 from functools import reduce, partial
-from multiprocessing import Pool
 from collections import defaultdict
 
 from .io import load_imgs
-from .misc import get_classes, img_exts
+from .misc import get_classes, img_exts, prog_map
 from ..imagesize import imsize
 from ..utils import get_bbox_type
 from ..transforms import bbox2type
@@ -29,13 +28,8 @@ def load_dota(img_dir, ann_dir=None, classes=None, nproc=10):
                          img_dir=img_dir,
                          ann_dir=ann_dir,
                          cls2lbl=cls2lbl)
-    if nproc > 1:
-        pool = Pool(nproc)
-        contents = pool.map(_load_func, os.listdir(img_dir))
-        pool.close()
-    else:
-        contents = list(map(_load_func, os.listdir(img_dir)))
-    contents = [c for c in contents if c is not None]
+    img_list = os.listdir(img_dir)
+    contents = prog_map(_load_func, img_list, nproc)
     end_time = time.time()
     print(f'Finishing loading DOTA, get {len(contents)} images,',
           f'using {end_time-start_time:.3f}s.')

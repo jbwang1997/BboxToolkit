@@ -4,10 +4,9 @@ import pickle
 import time
 import numpy as np
 
-from multiprocessing import Pool
-
 from ..utils import get_bbox_dim
-from .misc import read_img_info, change_cls_order, get_classes
+from .misc import (read_img_info, change_cls_order, get_classes,
+                   prog_map)
 
 
 def load_imgs(img_dir, ann_dir=None, classes=None, nproc=10,
@@ -21,12 +20,7 @@ def load_imgs(img_dir, ann_dir=None, classes=None, nproc=10,
     start_time = time.time()
     imgpaths = [osp.join(img_dir, imgfile)
                 for imgfile in os.listdir(img_dir)]
-    if nproc > 1:
-        pool = Pool(nproc)
-        infos = pool.map(read_img_info, imgpaths)
-        pool.close()
-    else:
-        infos = list(map(read_img_info, imgpaths))
+    infos = prog_map(read_img_info, imgpaths, nproc)
 
     if def_bbox_type is not None:
         for info in infos:
@@ -55,13 +49,7 @@ def load_pkl(ann_dir, img_dir=None, classes=None, nproc=10):
     if img_dir is not None:
         imgpaths = [osp.join(img_dir, content['filename'])
                     for content in contents]
-        if nproc > 1:
-            pool = Pool(nproc)
-            infos = pool.map(read_img_info, imgpaths)
-            pool.close()
-        else:
-            infos = list(map(read_img_info, imgpaths))
-
+        infos = prog_map(read_img_info, imgpaths, nproc)
         for info, content in zip(infos, contents):
             content.update(info)
 

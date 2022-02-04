@@ -9,3 +9,4 @@ from .MSRA_TD500io import load_msra_td500
 from .HUST_TR400io import load_hust_tr400
 from .RCTW_17io import load_rctw_17, load_rctw_17_submission, save_rctw_17
 from .VOCio import load_voc
+from .SynthTextio import load_synthtext

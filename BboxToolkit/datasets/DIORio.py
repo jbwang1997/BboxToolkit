@@ -4,10 +4,8 @@ import os.path as osp
 import xml.etree.ElementTree as ET
 import numpy as np
 
-from multiprocessing import Pool
 from functools import partial
-
-from .misc import get_classes, img_exts
+from .misc import get_classes, img_exts, prog_map
 from ..imagesize import imsize
 from ..transforms import bbox2type
 
@@ -35,13 +33,8 @@ def load_dior(img_dir, ann_dir=None, classes=None, xmltype='obb', nproc=10):
                          ann_dir=ann_dir,
                          cls2lbl=cls2lbl,
                          xmltype=xmltype)
-    if nproc > 1:
-        pool = Pool(nproc)
-        contents = pool.map(_load_func, os.listdir(img_dir))
-        pool.close()
-    else:
-        contents = list(map(_load_func, os.listdir(img_dir)))
-    contents = [c for c in contents if c is not None]
+    img_list = os.listdir(img_dir)
+    contents = prog_map(_load_func, img_list, nproc)
     end_time = time.time()
     print(f'Finishing loading DIOR {xmltype}, get {len(contents)} images,',
           f'using {end_time-start_time:.3f}s.')

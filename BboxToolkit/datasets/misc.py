@@ -2,7 +2,9 @@ import itertools
 import os.path as osp
 import numpy as np
 
-from PIL import Image
+from tqdm import tqdm
+from multiprocessing import Pool
+from ..imagesize import imsize
 
 
 def product(*inputs):
@@ -36,6 +38,7 @@ dataset_classes = {
     'MSRA_TD500': ('text', ),
     'HUST_TR400': ('text', ),
     'RCTW_17': ('text', ),
+    'SynthText': ('text', ),
     'VOC': ('person', 'bird', 'cat', 'cow', 'dog', 'horse', 'sheep', 'aeroplane',
             'bicycle', 'boat', 'bus', 'car', 'motorbike', 'train', 'bottle',
             'chair', 'diningtable', 'pottedplant', 'sofa', 'tvmonitor'),
@@ -51,6 +54,7 @@ dataset_aliases = {
     'MSRA_TD500': ['msra_td500', 'MSRA_TD500', 'msra-td500', 'MSRA-TD500'],
     'HUST_TR400': ['hust_tr500', 'HUST_TR400', 'hust-tr400', 'HUST-TR400'],
     'RCTW_17': ['rctw_17', 'RCTW_17', 'rctw-17', 'RCTW-17'],
+    'SynthText': ['synthtext', 'SynthText'],
     'VOC': ['VOC', 'voc'],
 }
 
@@ -63,8 +67,8 @@ def read_img_info(imgpath):
     if ext not in img_exts:
         return None
 
-    size = Image.open(imgpath).size
-    content = dict(width=size[0], height=size[1], filename=imgfile, id=img_id)
+    width, height = imsize(imgpath)
+    content = dict(width=width, height=height, filename=imgfile, id=img_id)
     return content
 
 
@@ -173,6 +177,25 @@ def split_imgset(contents, imgset):
 
         imgset_contents.append(contents[id_mapper[img_id]])
     return imgset_contents
+
+
+def prog_map(func, tasks, nproc):
+    if nproc > 1:
+        pool = Pool(nproc)
+        iterator = pool.imap(func, tasks)
+    else:
+        iterator = map(func, tasks)
+
+    contents = []
+    with tqdm(total=len(tasks)) as pbar:
+        for content in iterator:
+            pbar.update()
+            if content is not None:
+                contents.append(content)
+
+    if nproc > 1:
+        pool.close()
+    return contents
 
 
 class _ConstMapper:

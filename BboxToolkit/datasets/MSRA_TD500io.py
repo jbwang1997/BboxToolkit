@@ -4,9 +4,7 @@ import numpy as np
 import os.path as osp
 
 from functools import partial
-from multiprocessing import Pool
-
-from .misc import img_exts
+from .misc import img_exts, prog_map
 from ..imagesize import imsize
 
 
@@ -23,12 +21,7 @@ def load_msra_td500(img_dir, ann_dir=None, classes=None, nproc=10):
 
     print('Starting loading MSRA_TD500 dataset information.')
     start_time = time.time()
-    if nproc > 1:
-        pool = Pool(nproc)
-        contents = pool.map(_load_func, imgpaths)
-        pool.close()
-    else:
-        contents = list(map(_load_func, imgpaths))
+    contents = prog_map(_load_func, imgpaths, nproc)
     end_time = time.time()
     print(f'Finishing loading MSRA_TD500, get {len(contents)} images, ',
           f'using {end_time-start_time:.3f}s.')
