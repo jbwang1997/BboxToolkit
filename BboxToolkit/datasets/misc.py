@@ -39,6 +39,7 @@ dataset_classes = {
     'HUST_TR400': ('text', ),
     'RCTW_17': ('text', ),
     'SynthText': ('text', ),
+    'ICDAR2015': ('text', ),
     'VOC': ('person', 'bird', 'cat', 'cow', 'dog', 'horse', 'sheep', 'aeroplane',
             'bicycle', 'boat', 'bus', 'car', 'motorbike', 'train', 'bottle',
             'chair', 'diningtable', 'pottedplant', 'sofa', 'tvmonitor'),
@@ -55,6 +56,7 @@ dataset_aliases = {
     'HUST_TR400': ['hust_tr500', 'HUST_TR400', 'hust-tr400', 'HUST-TR400'],
     'RCTW_17': ['rctw_17', 'RCTW_17', 'rctw-17', 'RCTW-17'],
     'SynthText': ['synthtext', 'SynthText'],
+    'ICDAR2015': ['ICDAR2015', 'icdar2015'],
     'VOC': ['VOC', 'voc'],
 }
 
@@ -177,6 +179,20 @@ def split_imgset(contents, imgset):
 
         imgset_contents.append(contents[id_mapper[img_id]])
     return imgset_contents
+
+
+def nproc_map(func, tasks, nproc):
+    if nproc > 1:
+        pool = Pool(nproc)
+        iterator = pool.imap(func, tasks)
+    else:
+        iterator = map(func, tasks)
+
+    contents = [c for c in iterator if c is not None]
+
+    if nproc > 1:
+        pool.close()
+    return contents
 
 
 def prog_map(func, tasks, nproc):

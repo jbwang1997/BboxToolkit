@@ -10,4 +10,6 @@ setup(name='BboxToolkit',
           'opencv-python',
           'terminaltables',
           'shapely',
+          'tqdm',
+          'scipy',
           'numpy'])
