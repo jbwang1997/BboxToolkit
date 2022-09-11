@@ -62,6 +62,8 @@ def add_parser(parser):
                         help='to save pkl and splitted images')
     parser.add_argument('--save_ext', type=str, default='.png',
                         help='the extension of saving images')
+    parser.add_argument('--generate_txt', action='store_true',
+                        help='to generate txt for splitted images')
 
 
 def abspath(path):
@@ -171,7 +173,7 @@ def get_window_obj(info, windows, iof_thr):
 
 
 def crop_and_save_img(info, windows, window_anns, img_dir, no_padding,
-                      padding_value, filter_empty, save_dir, img_ext):
+                      padding_value, filter_empty, save_dir, img_ext, generate_txt, save_txt):
     img = cv2.imread(osp.join(img_dir, info['filename']))
     patch_infos = []
     for i in range(windows.shape[0]):
@@ -211,18 +213,33 @@ def crop_and_save_img(info, windows, window_anns, img_dir, no_padding,
         cv2.imwrite(osp.join(save_dir, patch_info['id']+img_ext), patch)
         patch_info['filename'] = patch_info['id'] + img_ext
         patch_infos.append(patch_info)
+        
+        if generate_txt:
+            # annotation txt file generation
+            txtpath = osp.join(save_txt, patch_info['id']+'.txt')
+            txtfile = open(txtpath, "a");
+            for i in range(len(patch_info['ann']['labels'])):
+                box = np.array2string(patch_info['ann']['bboxes'][i]).strip("[""]")
+                box += ' '
+                box += str(patch_info['ann']['classnames'][i])
+                box += ' '
+                box += str(patch_info['ann']['diffs'][i])
+                box += '\n'
+                #print(box)
+                txtfile.write(box)
+            txtfile.close()
 
     return patch_infos
 
 
 def single_split(arguments, sizes, gaps, img_rate_thr, iof_thr, no_padding,
-                 padding_value, filter_empty, save_dir, img_ext, lock,
+                 padding_value, filter_empty, save_dir, img_ext, generate_txt, save_txt, lock,
                  prog, total, logger):
     info, img_dir = arguments
     windows = get_sliding_window(info, sizes, gaps, img_rate_thr)
     window_anns = get_window_obj(info, windows, iof_thr)
     patch_infos = crop_and_save_img(info, windows, window_anns, img_dir, no_padding,
-                                    padding_value, filter_empty, save_dir, img_ext)
+                                    padding_value, filter_empty, save_dir, img_ext, generate_txt, save_txt)
     assert patch_infos or (filter_empty and info['ann']['bboxes'].size == 0)
 
     lock.acquire()
@@ -271,8 +288,10 @@ def main():
         gaps += [int(gap / rate) for gap in args.gaps]
     save_imgs = osp.join(args.save_dir, 'images')
     save_files = osp.join(args.save_dir, 'annfiles')
+    save_txt = osp.join(args.save_dir, 'txt')
     os.makedirs(save_imgs)
     os.makedirs(save_files)
+    os.makedirs(save_txt)
     logger = setup_logger(save_files)
 
     print('Loading original data!!!')
@@ -304,6 +323,8 @@ def main():
                      filter_empty=args.filter_empty,
                      save_dir=save_imgs,
                      img_ext=args.save_ext,
+                     generate_txt=args.generate_txt,
+                     save_txt=save_txt,
                      lock=manager.Lock(),
                      prog=manager.Value('i', 0),
                      total=len(infos),
@@ -334,3 +355,4 @@ def main():
 
 if __name__ == '__main__':
     main()
+
