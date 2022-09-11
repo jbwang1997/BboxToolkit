@@ -52,7 +52,7 @@ def _load_dota_single(imgfile, img_dir, ann_dir, cls2lbl):
 
 
 def _load_dota_txt(txtfile, cls2lbl):
-    gsd, bboxes, labels, diffs = None, [], [], []
+    gsd, bboxes, labels, diffs, classnames = None, [], [], [], []
     if txtfile is None:
         pass
     elif not osp.isfile(txtfile):
@@ -75,6 +75,7 @@ def _load_dota_txt(txtfile, cls2lbl):
                     bboxes.append([float(i) for i in items[:8]])
                     labels.append(cls2lbl[items[8]])
                     diffs.append(int(items[9]) if len(items) == 10 else 0)
+                    classnames.append(items[8])
 
     bboxes = np.array(bboxes, dtype=np.float32) if bboxes else \
             np.zeros((0, 8), dtype=np.float32)
@@ -82,7 +83,8 @@ def _load_dota_txt(txtfile, cls2lbl):
             np.zeros((0, ), dtype=np.int64)
     diffs = np.array(diffs, dtype=np.int64) if diffs else \
             np.zeros((0, ), dtype=np.int64)
-    ann = dict(bboxes=bboxes, labels=labels, diffs=diffs)
+    classnames = np.array(classnames, dtype=np.str) if classnames else labels
+    ann = dict(bboxes=bboxes, labels=labels, diffs=diffs, classnames=classnames)
     return dict(gsd=gsd, ann=ann)
 
 
